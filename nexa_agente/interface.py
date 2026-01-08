@@ -1,6 +1,8 @@
 import customtkinter as ctk
 import threading
 import time
+import os
+from PIL import Image
 from datetime import datetime
 
 # Configuración visual
@@ -21,7 +23,25 @@ class NexaGUI(ctk.CTk):
         self.header_frame = ctk.CTkFrame(self, corner_radius=0)
         self.header_frame.grid(row=0, column=0, sticky="ew")
         
-        self.title_label = ctk.CTkLabel(self.header_frame, text="🤖 NEXA AI V2.0", font=("Roboto Medium", 20))
+        # Intentar cargar logo
+        self.logo_image = None
+        try:
+            # Ruta relativa desde nexa_agente/interface.py hacia arriba
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            image_path = os.path.join(base_dir, "face.png")
+            
+            if os.path.exists(image_path):
+                pil_image = Image.open(image_path)
+                self.logo_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(40, 40))
+        except Exception as e:
+            print(f"Error cargando imagen: {e}")
+
+        # Label con imagen si existe
+        if self.logo_image:
+            self.title_label = ctk.CTkLabel(self.header_frame, text="  NEXA AI V2.0", image=self.logo_image, compound="left", font=("Roboto Medium", 20))
+        else:
+            self.title_label = ctk.CTkLabel(self.header_frame, text="🤖 NEXA AI V2.0", font=("Roboto Medium", 20))
+            
         self.title_label.pack(pady=10, padx=10, side="left")
         
         self.status_label = ctk.CTkLabel(self.header_frame, text="🔴 Offline", text_color="gray")

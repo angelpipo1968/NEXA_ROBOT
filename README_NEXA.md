@@ -1,5 +1,7 @@
 # 🤖 NEXA ROBOT V2.0
 
+<img src="face.png" width="150" align="right">
+
 Este es el directorio principal de tu asistente NEXA.
 
 ## 🚀 Cómo Iniciar
