@@ -11,3 +11,7 @@ wikipedia
 customtkinter
 packaging
 opencv-python
+pyautogui
+flask
+flask-socketio
+eventlet

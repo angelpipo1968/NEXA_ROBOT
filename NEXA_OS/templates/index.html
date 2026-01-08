@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXA OS v1.0</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --accent-color: #00f3ff;
+            --text-color: #e0e0e0;
+            --glass-bg: rgba(20, 20, 20, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Consolas', 'Courier New', monospace;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(10,10,10,1) 100%);
+        }
+
+        /* Contenedor Principal */
+        .desktop {
+            display: grid;
+            grid-template-rows: 60px 1fr 80px;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Barra Superior */
+        .top-bar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-color);
+            letter-spacing: 2px;
+        }
+
+        .clock {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        /* Área Central (Widgets) */
+        .main-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .window {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .window-title {
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        /* Terminal */
+        .terminal-content {
+            flex-grow: 1;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            color: #0f0;
+            overflow-y: auto;
+        }
+
+        /* Esfera de IA (Visualizer) */
+        .ai-core {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+
+        .core-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 0 20px var(--accent-color), inset 0 0 20px var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 40px var(--accent-color); }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        /* Barra Inferior */
+        .dock {
+            background: var(--glass-bg);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .dock-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .dock-btn:hover {
+            background: var(--accent-color);
+            color: black;
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="desktop">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="logo">NEXA OS</div>
+            <div class="clock" id="clock">00:00:00</div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-area">
+            <!-- AI Visualizer Window -->
+            <div class="window">
+                <div class="window-title">Núcleo de IA</div>
+                <div class="ai-core">
+                    <div class="core-circle"></div>
+                </div>
+            </div>
+
+            <!-- Terminal Window -->
+            <div class="window">
+                <div class="window-title">Terminal del Sistema</div>
+                <div class="terminal-content" id="terminal">
+                    > Iniciando NEXA OS...<br>
+                    > Cargando módulos de memoria... OK<br>
+                    > Conectando con red neuronal... OK<br>
+                    > Sistema listo.<br>
+                    >_
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Dock -->
+        <div class="dock">
+            <button class="dock-btn">🎤 Escuchar</button>
+            <button class="dock-btn">⚙️ Ajustes</button>
+            <button class="dock-btn">📂 Archivos</button>
+            <button class="dock-btn">🔴 Apagar</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Conexión con el servidor (Python)
+        const socket = io();
+
+        const terminal = document.getElementById('terminal');
+
+        // Función para escribir en la terminal
+        function logToTerminal(text, type = 'system') {
+            const line = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            if (type === 'nexa') {
+                line.style.color = '#00f3ff';
+                line.innerHTML = `[${timestamp}] 🤖 NEXA: ${text}`;
+            } else if (type === 'user') {
+                line.style.color = '#fff';
+                line.innerHTML = `[${timestamp}] 👤 USER: ${text}`;
+            } else {
+                line.style.color = '#0f0';
+                line.innerHTML = `> ${text}`;
+            }
+            
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
+        }
+
+        // Eventos de SocketIO
+        socket.on('connect', () => {
+            logToTerminal('Conectado al servidor central.', 'system');
+        });
+
+        socket.on('system_log', (data) => {
+            logToTerminal(data.text, 'system');
+        });
+
+        socket.on('nexa_response', (data) => {
+            logToTerminal(data.text, 'nexa');
+        });
+
+        // Botones
+        document.querySelector('.dock-btn:nth-child(1)').onclick = () => {
+            // Simular comando de voz
+            const cmd = prompt("Escribe un comando (Simulación de voz):");
+            if (cmd) {
+                logToTerminal(cmd, 'user');
+                socket.emit('user_command', {text: cmd});
+            }
+        };
+
+        // Reloj en tiempo real
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

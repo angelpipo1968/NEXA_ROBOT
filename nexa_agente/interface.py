@@ -82,7 +82,7 @@ class NexaGUI(ctk.CTk):
     def start_agent(self):
         """Inicia el cerebro del robot en un hilo separado."""
         self.is_running = True
-        self.status_label.configure(text="🟢 En Línea", text_color="#00FF00")
+        self.status_label.configure(text="● ONLINE", text_color="#4EC9B0") # Verde cyan
         
         # Thread daemon para que muera al cerrar la ventana
         self.thread = threading.Thread(target=self.agent_loop_callback, args=(self,), daemon=True)
@@ -95,25 +95,23 @@ class NexaGUI(ctk.CTk):
     def update_status(self, text, color="white"):
         """Actualiza el indicador de estado."""
         try:
-            self.status_label.configure(text=text, text_color=color)
+            self.status_label.configure(text=text.upper(), text_color=color)
         except:
             pass
 
     def log_message(self, sender, message):
         """Escribe un mensaje en el chat."""
         try:
-            timestamp = datetime.now().strftime("%H:%M")
+            timestamp = datetime.now().strftime("%H:%M:%S")
             self.chat_area.configure(state="normal")
             
             if sender == "NEXA":
-                prefix = f"[{timestamp}] 🤖 NEXA:\n"
-                tag = "robot"
+                prefix = f"[{timestamp}] > NEXA:\n"
+                # Color simulado con tags no es nativo en ctk, pero usamos formato limpio
             elif sender == "USER":
-                prefix = f"\n[{timestamp}] 👤 TÚ:\n"
-                tag = "user"
+                prefix = f"\n[{timestamp}] $ USER:\n"
             else:
-                prefix = f"[{timestamp}] ℹ️ SISTEMA: "
-                tag = "sys"
+                prefix = f"[{timestamp}] # SYSTEM: "
 
             full_text = f"{prefix}{message}\n"
             self.chat_area.insert("end", full_text)

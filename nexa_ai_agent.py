@@ -10,7 +10,7 @@ import subprocess
 import datetime
 import time
 import threading
-PPython:
+
 # ───── GESTIÓN DE DEPENDENCIAS ─────
 try:
     import speech_recognition as sr
@@ -25,7 +25,7 @@ except ImportError as e:
     print(f"\n[❌] ERROR FATAL: Falta una dependencia crítica: {e}")
     print("[ℹ️] Ejecuta 'install_requirements.bat' para corregirlo.")
     time.sleep(5)
-    Psys.exit(1)
+    sys.exit(1)
 
 # ───── CONFIGURACIÓN ─────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -186,6 +186,42 @@ def process_command(text: str):
     if "notas" in text or "recuerdas" in text:
         notes = get_recent_notes()
         speak(notes)
+        return
+
+    # --- VISION (OJOS) ---
+    # Palabras clave: cámara, camara, verte, ojos, visión, vision, activar
+    text_clean = text.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+    
+    if "camara" in text_clean or "verte" in text_clean or "ojos" in text_clean or "vision" in text_clean:
+        if "cierra" in text_clean or "apaga" in text_clean or "quita" in text_clean or "desactiva" in text_clean:
+            msg = vision_system.close_camera()
+            speak(msg)
+        else:
+            msg = vision_system.open_camera()
+            speak(msg)
+        return
+
+    if "que ves" in text_clean or "analiza" in text_clean or "mira esto" in text_clean:
+        model = get_model()
+        if model:
+            desc = vision_system.analyze_scene(model)
+            speak(desc)
+        else:
+            speak("No puedo ver porque mi cerebro no está conectado.")
+        return
+
+    # --- CONTROL DE SISTEMA (VOLUMEN / APPS) ---
+    if "volumen" in text_clean or "sonido" in text_clean or "silencio" in text_clean:
+        control_volume(text_clean)
+        return
+
+    if "abre" in text_clean or "abrir" in text_clean:
+        if "camara" not in text_clean and "ojos" not in text_clean: # Evitar conflicto con visión
+            open_app(text_clean)
+            return
+
+    if "apagar computadora" in text_clean or "reiniciar computadora" in text_clean or "confirmar apagar" in text_clean or "confirmar reiniciar" in text_clean:
+        system_power(text_clean)
         return
 
     # --- IA GENERATIVA (CEREBRO) ---

@@ -20,6 +20,14 @@ class NexaVision:
         threading.Thread(target=self._camera_loop, daemon=True).start()
         return "Activando sistema visual."
 
+    def close_camera(self):
+        """Cierra la ventana de la cámara."""
+        if not self.is_active:
+            return "La cámara ya está apagada."
+        
+        self.is_active = False # Esto romperá el bucle _camera_loop
+        return "Desactivando cámara."
+
     def _camera_loop(self):
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
