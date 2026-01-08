@@ -1,0 +1,14 @@
+{
+    "name": "nexa-robot-v2",
+    "version": "2.0.0",
+    "description": "NEXA AI Agent Control Panel",
+    "scripts": {
+        "▶️ Iniciar NEXA": "start_agent.bat",
+        "🛑 Detener todo": "taskkill /IM python.exe /F"
+    },
+    "keywords": [
+        "nexa",
+        "ai",
+        "agent"
+    ]
+}

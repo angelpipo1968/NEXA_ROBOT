@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>NEXA AI - Interface</title>
+  <style>
+    body { 
+        background: #000; 
+        color: #0ff; 
+        font-family: 'Segoe UI', monospace; 
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    
+    #face-container {
+        position: relative;
+        width: 400px;
+        height: 400px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #nexa-face {
+        width: 100%;
+        height: auto;
+        border-radius: 50%;
+        box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+        animation: pulse 4s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.2); transform: scale(1); }
+        50% { box-shadow: 0 0 80px rgba(0, 255, 255, 0.6); transform: scale(1.02); }
+        100% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.2); transform: scale(1); }
+    }
+
+    #status-text {
+        position: absolute;
+        bottom: 20px;
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        opacity: 0.7;
+        text-shadow: 0 0 10px #0ff;
+    }
+
+    /* Hidden controls for debug/future use */
+    #controls { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="face-container">
+      <img id="nexa-face" src="face.png" alt="NEXA Face">
+  </div>
+  
+  <div id="status-text">Sistema En Línea</div>
+
+  <!-- Hidden legacy functionality -->
+  <div id="controls">
+    <div id="log"></div>
+  </div>
+
+  <script>
+    // Visual Pulse on Speak (Simulated)
+    function simulateSpeaking() {
+        const face = document.getElementById('nexa-face');
+        face.style.animation = "pulse 0.5s infinite alternate";
+        setTimeout(() => {
+            face.style.animation = "pulse 4s infinite ease-in-out";
+        }, 3000);
+    }
+    
+    // Auto-init
+    window.onload = () => {
+        console.log("NEXA Interface Loaded");
+        // Simulate startup effect
+        setTimeout(simulateSpeaking, 1000);
+    };
+  </script>
+</body>
+</html>

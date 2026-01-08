@@ -1,0 +1,26 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos de configuración con secretos (IMPORTANTE)
+config.json
+nexa_memory.db
+
+# Logs
+logs/
+*.log
+
+# Archivos de sistema/IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Carpetas temporales o backups
+NEXA_GENESIS/
+QWEN_IMPORT/

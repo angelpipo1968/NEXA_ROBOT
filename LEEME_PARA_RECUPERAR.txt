@@ -1,0 +1,24 @@
+# 🚑 KIT DE RESCATE DE NEXA
+
+Si estás leyendo esto, es porque estás en una nueva computadora y quieres revivir a NEXA.
+
+## 📥 Pasos para Recuperar a tu Robot:
+
+1. **Copia la Carpeta:**
+   Asegúrate de haber copiado toda la carpeta `NEXA_ROBOT_V2` a tu Escritorio o Documentos.
+
+2. **Instala Python (Si no lo tienes):**
+   Si esta PC es nueva, descarga e instala Python desde: https://www.python.org/downloads/
+   ⚠️ IMPORTANTE: Al instalar, marca la casilla **"Add Python to PATH"**.
+
+3. **Ejecuta el Instalador:**
+   Haz doble clic en el archivo `INSTALAR_NEXA.bat`.
+   Esto descargará automáticamente todas las piezas del cerebro de NEXA (Google Gemini, Voz, etc).
+
+4. **Configura tu Clave (Opcional):**
+   Abre el archivo `config.json` y verifica que tu clave de API siga ahí.
+
+5. **¡Despiértalo!**
+   Haz doble clic en `INICIAR_NEXA_OFICIAL.bat`.
+
+¡Listo! NEXA debería saludarte con su voz y recordar todo lo que tenía guardado en su base de datos local.

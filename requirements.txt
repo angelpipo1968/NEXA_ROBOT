@@ -1,0 +1,12 @@
+pywin32
+SpeechRecognition
+pyaudio
+psutil
+edge-tts
+pygame
+google-generativeai
+python-dotenv
+pywhatkit
+wikipedia
+customtkinter
+packaging
