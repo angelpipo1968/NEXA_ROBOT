@@ -10,21 +10,22 @@ import subprocess
 import datetime
 import time
 import threading
-
+PPython:
 # ───── GESTIÓN DE DEPENDENCIAS ─────
 try:
     import speech_recognition as sr
     import psutil
     from nexa_agente.voice_engine import speak as engine_speak
-    from nexa_agente.brain import ask_brain
+    from nexa_agente.brain import ask_brain, get_model
     from nexa_agente.web_skills import play_youtube, search_google, search_wikipedia
     from nexa_agente.memory import remember, add_note, get_recent_notes
     from nexa_agente.interface import launch_gui
+    from nexa_agente.vision import vision_system
 except ImportError as e:
     print(f"\n[❌] ERROR FATAL: Falta una dependencia crítica: {e}")
     print("[ℹ️] Ejecuta 'install_requirements.bat' para corregirlo.")
     time.sleep(5)
-    sys.exit(1)
+    Psys.exit(1)
 
 # ───── CONFIGURACIÓN ─────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

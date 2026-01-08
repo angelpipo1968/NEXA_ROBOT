@@ -26,15 +26,28 @@ class NexaGUI(ctk.CTk):
         # Intentar cargar logo
         self.logo_image = None
         try:
-            # Ruta relativa desde nexa_agente/interface.py hacia arriba
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            image_path = os.path.join(base_dir, "face.png")
+            # Buscar face.png en varias ubicaciones posibles
+            possible_paths = [
+                os.path.join(os.getcwd(), "face.png"),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "face.png"),
+                r"c:\Users\pipog\NEXA_ROBOT_V2\face.png"
+            ]
             
-            if os.path.exists(image_path):
-                pil_image = Image.open(image_path)
-                self.logo_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(40, 40))
+            final_path = None
+            for p in possible_paths:
+                if os.path.exists(p):
+                    final_path = p
+                    print(f"[GUI] Logo encontrado en: {p}")
+                    break
+            
+            if final_path:
+                pil_image = Image.open(final_path)
+                self.logo_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(50, 50))
+            else:
+                print("[GUI] ⚠️ No se encontró face.png")
+                
         except Exception as e:
-            print(f"Error cargando imagen: {e}")
+            print(f"[GUI] Error cargando imagen: {e}")
 
         # Label con imagen si existe
         if self.logo_image:

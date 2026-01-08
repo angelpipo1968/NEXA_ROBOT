@@ -40,6 +40,10 @@ if api_key and api_key != "TU_CLAVE_AQUI":
         print("[🧠] Cerebro Gemini conectado.")
     except Exception as e:
         print(f"[⚠️] Error conectando cerebro: {e}")
+        model = None
+
+def get_model():
+    return model
 
 def ask_brain(text: str):
     """

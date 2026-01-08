@@ -10,3 +10,4 @@ pywhatkit
 wikipedia
 customtkinter
 packaging
+opencv-python
