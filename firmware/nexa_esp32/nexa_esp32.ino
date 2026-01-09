@@ -15,6 +15,10 @@ const char* password = "TU_WIFI_PASSWORD";
 #define MOTOR_B_1 14
 #define MOTOR_B_2 12
 
+// Sensor Ultrasónico (HC-SR04)
+#define TRIG_PIN 5
+#define ECHO_PIN 18
+
 // Servidor Web en puerto 80
 WebServer server(80);
 
@@ -110,7 +114,32 @@ void handleCommand() {
   }
 }
 
-// 3. Manejar OPTIONS (Pre-flight CORS)
+// 3. Obtener Datos de Sensores
+void handleSensors() {
+  sendCorsHeaders();
+  
+  // Medir distancia
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  long duration = pulseIn(ECHO_PIN, HIGH);
+  int distance = duration * 0.034 / 2; // cm
+  
+  // Limitar ruido
+  if (distance > 400 || distance < 0) distance = 400;
+
+  String json = "{";
+  json += "\"distance\": " + String(distance) + ",";
+  json += "\"status\": \"online\"";
+  json += "}";
+  
+  server.send(200, "application/json", json);
+}
+
+// 4. Manejar OPTIONS (Pre-flight CORS)
 void handleOptions() {
   sendCorsHeaders();
   server.send(200, "text/plain", "");
@@ -136,6 +165,10 @@ void setup() {
   digitalWrite(MOTOR_A_1, LOW); digitalWrite(MOTOR_A_2, LOW);
   digitalWrite(MOTOR_B_1, LOW); digitalWrite(MOTOR_B_2, LOW);
 
+  // Configurar Sensor
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
   // Conexión WiFi
   Serial.println("\nConnecting to WiFi...");
   WiFi.begin(ssid, password);
@@ -153,6 +186,7 @@ void setup() {
   // Rutas del Servidor
   server.on("/", handleRoot);
   server.on("/command", handleCommand);
+  server.on("/sensors", handleSensors);
   server.onNotFound(handleNotFound);
 
   // Iniciar

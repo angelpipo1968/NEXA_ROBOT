@@ -2,6 +2,7 @@ import os
 import json
 import google.generativeai as genai
 from datetime import datetime
+from nexa_agente.memory import recall
 
 # Cargar configuración
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

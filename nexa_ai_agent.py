@@ -21,6 +21,7 @@ try:
     from nexa_agente.memory import remember, add_note, get_recent_notes
     from nexa_agente.interface import launch_gui
     from nexa_agente.vision import vision_system
+    from nexa_agente.update_verifier import UpdateVerifier
 except ImportError as e:
     print(f"\n[❌] ERROR FATAL: Falta una dependencia crítica: {e}")
     print("[ℹ️] Ejecuta 'install_requirements.bat' para corregirlo.")
@@ -252,5 +253,15 @@ if __name__ == "__main__":
     print(f"║  🤖 {AGENT_NAME} Agent - GUI Mode         ║")
     print("╚════════════════════════════════════╝")
     
+    # ───── VERIFICACIÓN SOBERANA DE ACTUALIZACIONES ─────
+    try:
+        print("[🛡️] Iniciando Protocolo de Seguridad Soberana...")
+        verifier = UpdateVerifier()
+        # Verificar contra el servidor oficial (o tu espejo en la nube)
+        verifier.check_and_update("https://nexa-ai.dev/deploy/")
+    except Exception as e:
+        print(f"[⚠️] Error en verificación de actualizaciones: {e}")
+        print("[ℹ️] Continuando inicio normal...")
+
     # Lanzar la GUI (que a su vez lanza el agent_loop en un hilo)
     launch_gui(agent_loop)

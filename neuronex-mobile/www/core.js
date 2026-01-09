@@ -677,6 +677,12 @@ function handleJoystickMove(pos) {
     
     // Solo enviar si cambia el comando y no es vacío
     if (cmd && cmd !== lastMoveCmd) {
+        // Bloqueo de seguridad por colisión
+        if (cmd === 'move_forward' && window.obstacleDetected) {
+            console.warn("Movimiento bloqueado por obstáculo");
+            return;
+        }
+
         lastMoveCmd = cmd;
         sendHardwareCommand(cmd);
         
@@ -685,6 +691,56 @@ function handleJoystickMove(pos) {
         moveInterval = setInterval(() => {
             if (lastMoveCmd === cmd) sendHardwareCommand(cmd);
         }, 500);
+    }
+}
+
+// === SENSORES Y TELEMETRÍA ===
+window.obstacleDetected = false;
+
+async function pollSensors() {
+    if (!HW_CONFIG.ENABLED) return; // Solo si está activo
+
+    try {
+        const response = await fetch(`${HW_CONFIG.IP}/sensors`, { signal: AbortSignal.timeout(1000) });
+        if (response.ok) {
+            const data = await response.json();
+            updateSensorUI(data.distance);
+        }
+    } catch (e) {
+        // console.warn("Sensor offline");
+    }
+}
+
+function updateSensorUI(distance) {
+    const valEl = document.getElementById('distance-val');
+    const barEl = document.getElementById('distance-bar');
+    
+    if (!valEl || !barEl) return;
+    
+    valEl.textContent = distance;
+    
+    // Normalizar barra (0 a 100cm)
+    let percent = Math.min(100, (distance / 100) * 100);
+    barEl.style.width = `${percent}%`;
+    
+    // Lógica de seguridad
+    if (distance < 20) {
+        barEl.style.background = '#ff0000'; // ROJO
+        window.obstacleDetected = true;
+        
+        // Frenado de emergencia si estábamos avanzando
+        if (lastMoveCmd === 'move_forward') {
+            sendHardwareCommand('stop');
+            lastMoveCmd = 'stop';
+            fetchLocalAI("Obstáculo detectado. Frenando.");
+            setEmotion('ALERTA');
+        }
+    } else if (distance < 50) {
+        barEl.style.background = '#ffff00'; // AMARILLO
+        window.obstacleDetected = false;
+    } else {
+        barEl.style.background = '#00ff00'; // VERDE
+        window.obstacleDetected = false;
     }
 }
 
@@ -698,6 +754,9 @@ window.addEventListener('load', () => {
   loadFaceModels(); // Cargar modelos de FaceID
   initJoystickControl(); // Iniciar Joystick
   
+  // Polling de sensores cada 500ms
+  setInterval(pollSensors, 500);
+
   if (chatHistory.length <= 1) {
       const greeting = `${getTimeBasedGreeting()}, ${userName}. Sistemas listos.`;
       fetchLocalAI(greeting); // Inicia conversación con saludo contextual

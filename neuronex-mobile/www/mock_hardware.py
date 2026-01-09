@@ -52,6 +52,22 @@ class MockHardwareHandler(BaseHTTPRequestHandler):
             
             response = {"status": "success", "message": f"Comando '{action}' ejecutado en simulador."}
             self.wfile.write(json.dumps(response).encode('utf-8'))
+        
+        # Endpoint para sensores: /sensors
+        elif parsed_path.path == "/sensors":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            
+            # Simular distancia variable (oscila entre 10 y 100cm)
+            import time
+            import math
+            simulated_distance = int(55 + 45 * math.sin(time.time())) 
+            
+            response = {"distance": simulated_distance, "status": "online"}
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+
         else:
             self.send_response(404)
             self.end_headers()
