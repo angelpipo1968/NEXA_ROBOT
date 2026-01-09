@@ -1,0 +1,10 @@
+{ 
+   "version": "2.1.0", 
+   "last_update": "2026-01-08T14:30:00Z", 
+   "files": { 
+     "index.html": "sha256:abc123...", 
+     "logo-es.svg": "sha256:def456...", 
+     "core.js": "sha256:ghi789..." 
+   }, 
+   "signature": "GPG_SIGNATURE_AQUÍ" 
+ }

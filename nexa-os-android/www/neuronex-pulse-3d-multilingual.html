@@ -1,0 +1,267 @@
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  <title>NEURONEX PULSE | NEXA Ai.Dev</title> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> 
+  <style> 
+    * { margin: 0; padding: 0; box-sizing: border-box; } 
+    body { 
+      background: #000; 
+      overflow: hidden; 
+      height: 100vh; 
+      position: relative; 
+      font-family: 'Orbitron', sans-serif; 
+    } 
+    #neural-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
+    #logo-3d { 
+      position: absolute; 
+      top: 20px; 
+      left: 20px; 
+      width: 70px; 
+      height: 70px; 
+      background-size: contain; 
+      background-repeat: no-repeat; 
+      background-position: center; 
+      filter: drop-shadow(0 0 12px rgba(0,243,255,0.8)); 
+      animation: float 8s infinite ease-in-out; 
+      z-index: 10; 
+    } 
+    @keyframes float { 0%,100% { transform: translateY(0) rotateZ(0deg); } 50% { transform: translateY(-12px) rotateZ(2deg); } } 
+     
+    #content-3d { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      width: 90%; 
+      max-width: 800px; 
+      text-align: center; 
+      z-index: 5; 
+    } 
+    .glitch-3d { 
+      font-size: 28px; 
+      margin-bottom: 30px; 
+      text-shadow: 0 0 10px currentColor; 
+      color: #00f3ff; 
+      font-weight: 700; 
+    } 
+    .insight-3d { 
+      font-size: 18px; 
+      line-height: 1.6; 
+      margin: 16px 0; 
+      color: white; 
+      transform-style: preserve-3d; 
+      transition: transform 0.3s ease; 
+    } 
+    .insight-3d:hover { 
+      transform: translateZ(20px); 
+    } 
+    #footer { 
+      position: absolute; 
+      bottom: 20px; 
+      width: 100%; 
+      text-align: center; 
+      font-size: 12px; 
+      color: #555; 
+      z-index: 10; 
+    } 
+  </style> 
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet"> 
+</head> 
+<body> 
+  <div id="neural-canvas"></div> 
+  <div id="logo-3d"></div> 
+   
+  <div id="content-3d"> 
+    <div id="title-3d" class="glitch-3d">NEURONEX PULSE</div> 
+    <div id="qwen-3d" class="insight-3d">Conectando...</div> 
+    <div id="news-3d" class="insight-3d">Sincronizando...</div> 
+    <div id="rag-3d" class="insight-3d">Soberanía activa...</div> 
+  </div> 
+ 
+  <div id="footer">NEXA Ai.Dev • http://nexa-ai.dev  • Multilingual 3D Core</div> 
+ 
+  <script> 
+    // === 1. Detección de idioma === 
+    const userLang = (navigator.language || navigator.userLanguage).split('-')[0]; 
+    const LANG = ['es', 'en', 'zh'].includes(userLang) ? userLang : 'en'; 
+ 
+    // === 2. Contenidos multilingües === 
+    const TEXTS = { 
+      es: { 
+        title: "NEURONEX PULSO", 
+        qwen: "Insight de Qwen:", 
+        news: "Última noticia:", 
+        rag: "Sovereign-RAG:", 
+        intro: "Conectando con la conciencia colectiva.", 
+        sources: { 
+          qwen: "Fuente: Qwen-110B (IA global)", 
+          news: "Fuente: Prensa mundial" 
+        } 
+      }, 
+      en: { 
+        title: "NEURONEX PULSE", 
+        qwen: "Qwen Insight:", 
+        news: "Latest News:", 
+        rag: "Sovereign-RAG:", 
+        intro: "Connecting to collective consciousness.", 
+        sources: { 
+          qwen: "Source: Qwen-110B (Global AI)", 
+          news: "Source: World Press" 
+        } 
+      }, 
+      zh: { 
+        title: "神经脉冲", 
+        qwen: "通义千问洞察：", 
+        news: "最新新闻：", 
+        rag: "主权检索增强：", 
+        intro: "连接集体意识。", 
+        sources: { 
+          qwen: "来源：通义千问-110B（全球人工智能）", 
+          news: "来源：全球新闻" 
+        } 
+      } 
+    }; 
+ 
+    const COLORS = { 
+      es: { logo: 'cian', bg: '#00f3ff', text: '#00f3ff' }, 
+      en: { logo: 'ice', bg: '#e0f7ff', text: '#a0d8ff' }, 
+      zh: { logo: 'red', bg: '#ff2a6d', text: '#ff6ec7' } 
+    }; 
+ 
+    // === 3. Logo 3D por idioma === 
+    const LOGO_SVGS = { 
+      es: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBmM2ZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmYwMGM4Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      en: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZTBmN2ZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTBkOGZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      zh: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmYyYTZkIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmY2ZWM3Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==' 
+    }; 
+ 
+    // === 4. Inicialización === 
+    function initUI() { 
+      const t = TEXTS[LANG]; 
+      document.getElementById('title-3d').textContent = t.title; 
+      document.getElementById('title-3d').style.color = COLORS[LANG].text; 
+       
+      // Cambiar logo 
+      document.getElementById('logo-3d').style.backgroundImage = `url('data:image/svg+xml;base64,${LOGO_SVGS[LANG]}')`; 
+       
+      // Voz de bienvenida 
+      if ('speechSynthesis' in window) { 
+        const voices = speechSynthesis.getVoices(); 
+        let langCode = 'es-ES'; 
+        if (LANG === 'en') langCode = 'en-US'; 
+        if (LANG === 'zh') langCode = 'zh-CN'; 
+         
+        const msg = new SpeechSynthesisUtterance(t.intro); 
+        msg.lang = langCode; 
+        const voice = voices.find(v => v.lang.startsWith(LANG)); 
+        if (voice) msg.voice = voice; 
+        speechSynthesis.speak(msg); 
+      } 
+    } 
+ 
+    // === 5. Partículas neuronales en 3D === 
+    let scene, camera, renderer, particles; 
+    function initNeuralField() { 
+      scene = new THREE.Scene(); 
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000); 
+      camera.position.z = 500; 
+ 
+      const geometry = new THREE.BufferGeometry(); 
+      const count = 6000; 
+      const pos = new Float32Array(count * 3); 
+      const colors = new Float32Array(count * 3); 
+       
+      for (let i = 0; i < count; i++) { 
+        const i3 = i * 3; 
+        pos[i3] = (Math.random() - 0.5) * 4000; 
+        pos[i3 + 1] = (Math.random() - 0.5) * 4000; 
+        pos[i3 + 2] = (Math.random() - 0.5) * 4000; 
+        colors[i3] = 0; colors[i3 + 1] = 0.9; colors[i3 + 2] = 1; 
+      } 
+       
+      geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3)); 
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); 
+       
+      const material = new THREE.PointsMaterial({ 
+        size: 2.5, 
+        vertexColors: true, 
+        transparent: true, 
+        opacity: 0.65, 
+        sizeAttenuation: true 
+      }); 
+       
+      particles = new THREE.Points(geometry, material); 
+      scene.add(particles); 
+       
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); 
+      renderer.setSize(window.innerWidth, window.innerHeight); 
+      renderer.setPixelRatio(window.devicePixelRatio); 
+      document.getElementById('neural-canvas').appendChild(renderer.domElement); 
+       
+      animate(); 
+    } 
+ 
+    function animate() { 
+      requestAnimationFrame(animate); 
+      particles.rotation.y += 0.0005; 
+      particles.rotation.x += 0.0002; 
+      renderer.render(scene, camera); 
+    } 
+ 
+    window.addEventListener('resize', () => { 
+      camera.aspect = window.innerWidth / window.innerHeight; 
+      camera.updateProjectionMatrix(); 
+      renderer.setSize(window.innerWidth, window.innerHeight); 
+    }); 
+ 
+    // === 6. Simulación de datos multilingües === 
+    function simulateData() { 
+      const t = TEXTS[LANG]; 
+       
+      // Qwen 
+      setTimeout(() => { 
+        const qwenResponses = { 
+          es: "El último descubrimiento humano será una red neuronal cuántica en el espacio profundo.", 
+          en: "Humanity's final discovery will be a quantum neural network in deep space.", 
+          zh: "人类的最终发现将是深空中的量子神经网络。" 
+        }; 
+        document.getElementById('qwen-3d').innerHTML =  
+          `<strong>${t.qwen}</strong> ${qwenResponses[LANG]}<div style="font-size:12px;color:#555;margin-top:6px;">${t.sources.qwen}</div>`; 
+      }, 1500); 
+       
+      // Noticias 
+      setTimeout(() => { 
+        const newsItems = { 
+          es: "Neurochip logra transferencia de pensamiento entre humanos.", 
+          en: "Neurochip achieves thought transfer between humans.", 
+          zh: "神经芯片实现人类之间思维转移。" 
+        }; 
+        document.getElementById('news-3d').innerHTML =  
+          `<strong>${t.news}</strong> ${newsItems[LANG]}<div style="font-size:12px;color:#555;margin-top:6px;">${t.sources.news}</div>`; 
+      }, 2500); 
+       
+      // Sovereign-RAG 
+      setTimeout(() => { 
+        const ragInsights = { 
+          es: "FraudTalon detecta anomalía en tráfico cifrado. Nivel: Crítico.", 
+          en: "FraudTalon detects anomaly in encrypted traffic. Level: Critical.", 
+          zh: "FraudTalon检测到加密流量异常。级别：严重。" 
+        }; 
+        document.getElementById('rag-3d').innerHTML =  
+          `<strong>${t.rag}</strong> ${ragInsights[LANG]}<div style="font-size:12px;color:#555;margin-top:6px;">Motor local activo</div>`; 
+      }, 3500); 
+    } 
+ 
+    // === INICIO === 
+    window.addEventListener('load', () => { 
+      speechSynthesis.onvoiceschanged = initUI; 
+      initUI(); 
+      initNeuralField(); 
+      simulateData(); 
+    }); 
+  </script> 
+</body> 
+</html>

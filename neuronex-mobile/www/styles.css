@@ -1,0 +1,234 @@
+* { margin: 0; padding: 0; box-sizing: border-box; } 
+body { 
+  background: #000; 
+  overflow: hidden; 
+  height: 100vh; 
+  position: relative; 
+  font-family: 'Orbitron', sans-serif; 
+} 
+#neural-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
+#logo-3d { 
+  position: absolute; 
+  top: 20px; 
+  left: 20px; 
+  width: 70px; 
+  height: 70px; 
+  background-size: contain; 
+  background-repeat: no-repeat; 
+  background-position: center; 
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.7)); 
+  animation: float 8s infinite ease-in-out; 
+  z-index: 10; 
+} 
+@keyframes float { 0%,100% { transform: translateY(0) rotateZ(0deg); } 50% { transform: translateY(-12px) rotateZ(2deg); } } 
+ 
+#content-3d { 
+  position: absolute; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  width: 90%; 
+  max-width: 800px; 
+  text-align: center; 
+  z-index: 5; 
+} 
+.glitch-3d { 
+  font-size: 28px; 
+  margin-bottom: 30px; 
+  text-shadow: 0 0 10px currentColor; 
+  font-weight: 700; 
+} 
+.insight-3d { 
+  font-size: 18px; 
+  line-height: 1.6; 
+  margin: 16px 0; 
+  color: white; 
+  transform-style: preserve-3d; 
+  transition: transform 0.3s ease; 
+} 
+.insight-3d:hover { 
+  transform: translateZ(20px); 
+} 
+#footer { 
+  position: absolute; 
+  bottom: 20px; 
+  width: 100%; 
+  text-align: center; 
+  font-size: 12px; 
+  color: #555; 
+  z-index: 10; 
+}
+
+/* === HEADER CON LOGO === */
+#header-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+#logo-header {
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 0 8px rgba(0, 243, 255, 0.8));
+    animation: spin-slow 10s linear infinite;
+}
+@keyframes spin-slow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* === PANELES (Visión y Hardware) === */
+.panel-hidden {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.panel-visible {
+    display: block;
+    opacity: 1;
+    margin: 20px auto;
+    background: rgba(0, 20, 40, 0.8);
+    border: 1px solid #00f3ff;
+    border-radius: 10px;
+    padding: 15px;
+    max-width: 90%;
+}
+
+/* Visión */
+#vision-panel video {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 5px;
+    border: 1px solid #00f3ff;
+}
+#vision-overlay {
+    color: #00f3ff;
+    font-size: 12px;
+    margin-top: 5px;
+    animation: blink 1s infinite;
+}
+
+/* Knowledge RAG */
+#rag-input {
+    width: 100%;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #00f3ff;
+    color: white;
+    font-family: 'Orbitron', sans-serif;
+    padding: 10px;
+    margin-bottom: 10px;
+    resize: none;
+}
+
+/* Settings Panel */
+#settings-panel {
+    text-align: left;
+    padding: 15px;
+}
+#settings-panel h3 {
+    margin-top: 0;
+    color: #00f3ff;
+    border-bottom: 1px solid #00f3ff;
+    padding-bottom: 5px;
+}
+#settings-panel label {
+    display: block;
+    font-size: 12px;
+    margin-top: 10px;
+    color: #aaa;
+}
+#settings-panel input {
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #555;
+    color: white;
+    padding: 8px;
+    margin-top: 5px;
+    font-family: monospace;
+}
+#settings-panel input:focus {
+    border-color: #00f3ff;
+    outline: none;
+}
+
+/* Hardware Botones */
+.hw-btn {
+    background: rgba(0, 243, 255, 0.2);
+    border: 1px solid #00f3ff;
+    color: #00f3ff;
+    padding: 10px 15px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    transition: all 0.3s;
+}
+.hw-btn:hover {
+    background: #00f3ff;
+    color: #000;
+}
+
+/* === CONTROLES INFERIORES === */
+#controls-container {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 20;
+}
+
+.control-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-btn-large {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+    border-color: #00f3ff;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.control-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#mic-btn.mic-listening {
+    background: rgba(255, 0, 60, 0.8);
+    border-color: #ff003c;
+    box-shadow: 0 0 30px rgba(255, 0, 60, 0.8);
+    animation: pulse-mic 1.5s infinite;
+}
+
+#mic-status {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    z-index: 20;
+}
+
+@keyframes pulse-mic {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 0, 60, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 60, 0); }
+}

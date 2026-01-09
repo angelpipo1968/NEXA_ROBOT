@@ -23,6 +23,32 @@
             background-image: 
                 radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
                 linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(10,10,10,1) 100%);
+            /* Ajustes Android NEXA Ai.Dev */
+            font-size: 16px; /* Evita zoom en inputs */
+            touch-action: manipulation;
+        }
+
+        /* Ajustes para Notch y Logo Móvil */
+        @media (max-width: 768px) {
+            .logo {
+                position: absolute;
+                width: 56px;
+                height: 56px;
+                left: 16px;
+                top: 12px;
+                transform: rotateY(15deg) rotateX(8deg);
+                font-size: 1.2rem; /* Ajuste texto */
+            }
+
+            @supports (padding-top: env(safe-area-inset-top)) {
+                .logo {
+                    top: calc(12px + env(safe-area-inset-top));
+                }
+                .top-bar {
+                    padding-top: env(safe-area-inset-top);
+                    height: calc(60px + env(safe-area-inset-top));
+                }
+            }
         }
 
         /* Contenedor Principal */

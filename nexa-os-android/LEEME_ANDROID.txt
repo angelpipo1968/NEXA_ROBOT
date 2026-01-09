@@ -1,0 +1,73 @@
+# 📲 GUÍA DE COMPILACIÓN: NEXA OS ANDROID (APK)
+
+Tu proyecto móvil ya está configurado en esta carpeta (`NEXA_OS_MOBILE`).
+Sigue estos pasos para generar el archivo instalable `.apk`.
+
+## 🛠️ Requisitos Previos
+1. Instalar **Node.js** (v18 o superior).
+2. Instalar **Android Studio** (con SDK Tools).
+
+## 🚀 OPCIÓN A: Compilación Visual (Fácil)
+
+1. **Instalar dependencias:**
+   ```powershell
+   npm install
+   ```
+
+2. **Agregar plataforma Android:**
+   ```powershell
+   npx cap add android
+   ```
+
+3. **Copiar tu webapp:**
+   ```powershell
+   npx cap copy
+   ```
+
+4. **Abrir en Android Studio:**
+   ```powershell
+   npx cap open android
+   ```
+   *Luego ve a Build > Build APK.*
+
+## 🚀 OPCIÓN B: Compilación CLI (Pro / Automática)
+
+Si prefieres no abrir Android Studio, usa estos comandos:
+
+1. **Preparar entorno:**
+   ```powershell
+   npm install
+   npx cap add android
+   npx cap copy
+   ```
+
+2. **Compilar APK Release (desde terminal):**
+   ```powershell
+   cd android
+   ./gradlew assembleRelease
+   ```
+
+   *Nota: En Windows PowerShell, usa `.\gradlew assembleRelease`*
+
+3. **Ubicación del APK:**
+   `android/app/build/outputs/apk/release/app-release-unsigned.apk`
+
+---
+
+## 🔐 Firma y Publicación
+El APK generado en modo CLI no está firmado (`unsigned`).
+Para firmarlo y subirlo a la Play Store:
+1. Abre el proyecto en Android Studio (`npx cap open android`).
+2. Ve a **Build > Generate Signed Bundle / APK**.
+3. Sigue el asistente para crear tu clave `.keystore`.
+
+## 🎨 Personalización
+- **Icono de App:** Reemplaza las imágenes en `android/app/src/main/res/`.
+- **Experiencia Final:**
+  - Logo 3D flotante en esquina superior.
+  - Voz en Español: "NEXA OS activado en Android".
+  - Interfaz oscura y vibrante (Modo Inmersivo).
+  - 100% Offline (Sovereign-RAG Ready).
+
+---
+*NEXA Ai.Dev - Soberanía Digital Móvil*

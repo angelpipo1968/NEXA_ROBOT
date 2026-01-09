@@ -1,0 +1,292 @@
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  <title>NEURONEX PULSE | NEXA Ai.Dev</title> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> 
+  <style> 
+    * { margin: 0; padding: 0; box-sizing: border-box; } 
+    body { 
+      background: #000; 
+      overflow: hidden; 
+      height: 100vh; 
+      position: relative; 
+      font-family: 'Orbitron', sans-serif; 
+    } 
+    #neural-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
+    #logo-3d { 
+      position: absolute; 
+      top: 20px; 
+      left: 20px; 
+      width: 70px; 
+      height: 70px; 
+      background-size: contain; 
+      background-repeat: no-repeat; 
+      background-position: center; 
+      filter: drop-shadow(0 0 12px rgba(255,255,255,0.7)); 
+      animation: float 8s infinite ease-in-out; 
+      z-index: 10; 
+    } 
+    @keyframes float { 0%,100% { transform: translateY(0) rotateZ(0deg); } 50% { transform: translateY(-12px) rotateZ(2deg); } } 
+     
+    #content-3d { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      width: 90%; 
+      max-width: 800px; 
+      text-align: center; 
+      z-index: 5; 
+    } 
+    .glitch-3d { 
+      font-size: 28px; 
+      margin-bottom: 30px; 
+      text-shadow: 0 0 10px currentColor; 
+      font-weight: 700; 
+    } 
+    .insight-3d { 
+      font-size: 18px; 
+      line-height: 1.6; 
+      margin: 16px 0; 
+      color: white; 
+      transform-style: preserve-3d; 
+      transition: transform 0.3s ease; 
+    } 
+    .insight-3d:hover { 
+      transform: translateZ(20px); 
+    } 
+    #footer { 
+      position: absolute; 
+      bottom: 20px; 
+      width: 100%; 
+      text-align: center; 
+      font-size: 12px; 
+      color: #555; 
+      z-index: 10; 
+    } 
+  </style> 
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet"> 
+</head> 
+<body> 
+  <div id="neural-canvas"></div> 
+  <div id="logo-3d"></div> 
+   
+  <div id="content-3d"> 
+    <div id="title-3d" class="glitch-3d">NEURONEX PULSE</div> 
+    <div id="qwen-3d" class="insight-3d">Conectando...</div> 
+    <div id="news-3d" class="insight-3d">Sincronizando...</div> 
+    <div id="rag-3d" class="insight-3d">Soberanía activa...</div> 
+  </div> 
+ 
+  <div id="footer">NEXA Ai.Dev • http://nexa-ai.dev  • Multilingual 3D Core • Idioma: <span id="lang-code">es</span></div> 
+ 
+  <script> 
+    // === DETECCIÓN DE IDIOMA === 
+    const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase(); 
+    const SUPPORTED_LANGS = ['es','en','zh','fr','de','ja','pt','ar','ru','hi','ko']; 
+    const LANG = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en'; 
+ 
+    // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
+    const TEXTS = { 
+      es: { title: "NEURONEX PULSO", qwen: "Insight de Qwen:", news: "Última noticia:", rag: "Sovereign-RAG:", intro: "Conectando con la conciencia colectiva." }, 
+      en: { title: "NEURONEX PULSE", qwen: "Qwen Insight:", news: "Latest News:", rag: "Sovereign-RAG:", intro: "Connecting to collective consciousness." }, 
+      zh: { title: "神经脉冲", qwen: "通义千问洞察：", news: "最新新闻：", rag: "主权检索增强：", intro: "连接集体意识。" }, 
+      fr: { title: "IMPULSION NEURONEX", qwen: "Insight Qwen :", news: "Dernières nouvelles :", rag: "Sovereign-RAG :", intro: "Connexion à la conscience collective." }, 
+      de: { title: "NEURONEX-IMPULS", qwen: "Qwen-Einblick:", news: "Neueste Nachrichten:", rag: "Sovereign-RAG:", intro: "Verbindung zum kollektiven Bewusstsein." }, 
+      ja: { title: "ニューロネックス・パルス", qwen: "通義千問インサイト：", news: "最新ニュース：", rag: "Sovereign-RAG：", intro: "集合的意識に接続中。" }, 
+      pt: { title: "PULSO NEURONEX", qwen: "Insight do Qwen:", news: "Últimas Notícias:", rag: "Sovereign-RAG:", intro: "Conectando à consciência coletiva." }, 
+      ar: { title: "نبضة نيورونكس", qwen: "بصيرة قويين:", news: "آخر الأخبار:", rag: "سيادة-RAG:", intro: "الاتصال بالوعي الجماعي." }, 
+      ru: { title: "НЕЙРОНЕКС ИМПУЛЬС", qwen: "Инсайт Qwen:", news: "Последние новости:", rag: "Sovereign-RAG:", intro: "Подключение к коллективному сознанию." }, 
+      hi: { title: "न्यूरोनेक्स पल्स", qwen: "क्वेन अंतर्दृष्टि:", news: "नवीनतम समाचार:", rag: "सॉवरेन-आरएजी:", intro: "सामूहिक चेतना से जुड़ रहा है।" },
+      ko: { title: "뉴로넥스 펄스", qwen: "퀀 인사이트:", news: "최신 뉴스:", rag: "주권-RAG:", intro: "집단 의식에 연결 중." }
+    }; 
+ 
+    // === COLORES Y VOZ POR IDIOMA === 
+    const COLORS = { 
+      es: { text: '#00f3ff', glow: 'rgba(0,243,255,0.8)', voice: 'es-ES' }, 
+      en: { text: '#a0d8ff', glow: 'rgba(160,216,255,0.8)', voice: 'en-US' }, 
+      zh: { text: '#ff6ec7', glow: 'rgba(255,110,199,0.8)', voice: 'zh-CN' }, 
+      fr: { text: '#b967ff', glow: 'rgba(185,103,255,0.8)', voice: 'fr-FR' }, 
+      de: { text: '#00ff9d', glow: 'rgba(0,255,157,0.8)', voice: 'de-DE' }, 
+      ja: { text: '#ffcc00', glow: 'rgba(255,204,0,0.8)', voice: 'ja-JP' }, 
+      pt: { text: '#00cfff', glow: 'rgba(0,207,255,0.8)', voice: 'pt-BR' }, 
+      ar: { text: '#00f0b0', glow: 'rgba(0,240,176,0.8)', voice: 'ar-SA' }, 
+      ru: { text: '#d0f0ff', glow: 'rgba(208,240,255,0.8)', voice: 'ru-RU' }, 
+      hi: { text: '#ff00c8', glow: 'rgba(255,0,200,0.8)', voice: 'hi-IN' },
+      ko: { text: '#ff57c9', glow: 'rgba(255,87,201,0.8)', voice: 'ko-KR' }
+    }; 
+ 
+    // === LOGOS 3D POR IDIOMA (Base64 SVG personalizados) === 
+    const LOGO_SVGS = { 
+      es: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBmM2ZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmYwMGM4Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      en: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZTBmN2ZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTBkOGZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      zh: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmYyYTZkIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmY2ZWM3Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      fr: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjYjk2N2ZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmY2N2I5Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      de: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBmZjlkIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDBmZjY2Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      ja: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZjYzAwIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmY5OTAwIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      pt: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBjZmZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDBmZmNmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      ar: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBmMGIwIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDBiMGYwIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      ru: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZDBmMGZmIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZjBkMGZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==', 
+      hi: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmYwMGM4Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYzg1ZmZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg==',
+      ko: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmY1N2M5Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYzkyMGZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTMwLDI1IEw3MCwyNSBMNTAsNzAgWiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC45NSIvPjwvc3ZnPg=='
+    }; 
+ 
+    // === INICIALIZACIÓN DE INTERFAZ === 
+    function initUI() { 
+      const t = TEXTS[LANG]; 
+      const c = COLORS[LANG]; 
+       
+      // Actualizar texto y colores 
+      document.getElementById('title-3d').textContent = t.title; 
+      document.getElementById('title-3d').style.color = c.text; 
+      document.getElementById('title-3d').style.textShadow = `0 0 15px ${c.glow}`; 
+      document.getElementById('lang-code').textContent = LANG; 
+       
+      // Cambiar logo 
+      document.getElementById('logo-3d').style.backgroundImage = `url('data:image/svg+xml;base64,${LOGO_SVGS[LANG]}')`; 
+      document.getElementById('logo-3d').style.filter = `drop-shadow(0 0 12px ${c.glow})`; 
+       
+      // Voz 
+      if ('speechSynthesis' in window) { 
+        const msg = new SpeechSynthesisUtterance(t.intro); 
+        msg.lang = c.voice; 
+        speechSynthesis.speak(msg); 
+      } 
+    } 
+ 
+    // === CAMPO NEURONAL 3D (igual que antes) === 
+    let scene, camera, renderer, particles; 
+    function initNeuralField() { 
+      scene = new THREE.Scene(); 
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000); 
+      camera.position.z = 500; 
+ 
+      const geometry = new THREE.BufferGeometry(); 
+      const count = 6000; 
+      const pos = new Float32Array(count * 3); 
+      const colors = new Float32Array(count * 3); 
+      for (let i = 0; i < count; i++) { 
+        const i3 = i * 3; 
+        pos[i3] = (Math.random() - 0.5) * 4000; 
+        pos[i3 + 1] = (Math.random() - 0.5) * 4000; 
+        pos[i3 + 2] = (Math.random() - 0.5) * 4000; 
+        colors[i3] = 0; colors[i3 + 1] = 0.9; colors[i3 + 2] = 1; 
+      } 
+      geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3)); 
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); 
+       
+      const material = new THREE.PointsMaterial({ 
+        size: 2.5, vertexColors: true, transparent: true, opacity: 0.65 
+      }); 
+      particles = new THREE.Points(geometry, material); 
+      scene.add(particles); 
+       
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); 
+      renderer.setSize(window.innerWidth, window.innerHeight); 
+      renderer.setPixelRatio(window.devicePixelRatio); 
+      document.getElementById('neural-canvas').appendChild(renderer.domElement); 
+      animate(); 
+    } 
+ 
+    function animate() { 
+      requestAnimationFrame(animate); 
+      particles.rotation.y += 0.0005; 
+      particles.rotation.x += 0.0002; 
+      renderer.render(scene, camera); 
+    } 
+ 
+    window.addEventListener('resize', () => { 
+      camera.aspect = window.innerWidth / window.innerHeight; 
+      camera.updateProjectionMatrix(); 
+      renderer.setSize(window.innerWidth, window.innerHeight); 
+    }); 
+ 
+    // === SIMULACIÓN MULTILINGÜE === 
+    function simulateData() { 
+      const insights = { 
+        es: "FraudTalon detecta ataque en tiempo real. Nivel: Crítico.", 
+        en: "FraudTalon detects real-time attack. Level: Critical.", 
+        zh: "FraudTalon实时检测到攻击。级别：严重。", 
+        fr: "FraudTalon détecte une attaque en temps réel. Niveau : Critique.", 
+        de: "FraudTalon erkennt Echtzeit-Angriff. Stufe: Kritisch.", 
+        ja: "FraudTalonがリアルタイム攻撃を検出。レベル：クリティカル。", 
+        pt: "FraudTalon detecta ataque em tempo real. Nível: Crítico.", 
+        ar: "يكتشف FraudTalon هجومًا في الوقت الفعلي. المستوى: حرج.", 
+        ru: "FraudTalon обнаруживает атаку в реальном времени. Уровень: Критический.", 
+        hi: "FraudTalon वास्तविक समय में हमला पहचानता है। स्तर: गंभीर。",
+        ko: "FraudTalon이 실시간 공격을 감지했습니다. 위험 수준: 치명적."
+      }; 
+       
+      setTimeout(() => { 
+        document.getElementById('rag-3d').innerHTML =  
+          `<strong>${TEXTS[LANG].rag}</strong> ${insights[LANG]}<div style="font-size:12px;color:#555;margin-top:6px;">Motor local • Soberanía activa</div>`; 
+      }, 2000); 
+    } 
+ 
+    // === INICIO === 
+    window.addEventListener('load', () => { 
+      speechSynthesis.onvoiceschanged = initUI; 
+      initUI(); 
+      initNeuralField(); 
+      simulateData(); 
+    }); 
+  </script> 
+  <script> 
+    const MANIFEST_URL = 'http://nexa-ai.dev/neuronex/manifest.json'; 
+    const CURRENT_VERSION = '2.0.0'; // ← ¡Actualiza esto en cada release! 
+ 
+    async function checkForUpdate() { 
+      try { 
+        // 1. Descargar manifiesto 
+        const res = await fetch(MANIFEST_URL, { cache: 'no-cache' }); 
+        if (!res.ok) throw new Error('Manifest no disponible'); 
+         
+        const manifest = await res.json(); 
+         
+        // 2. Verificar si hay nueva versión 
+        if (manifest.version <= CURRENT_VERSION) return; 
+         
+        // 3. Verificar firma GPG (simulada aquí; en producción usa openpgp.js) 
+        if (!verifySignature(manifest)) { 
+          console.warn('⚠️ Actualización no firmada. Ignorando.'); 
+          return; 
+        } 
+         
+        // 4. Descargar y aplicar cambios 
+        await applyUpdate(manifest); 
+         
+        // 5. Recargar suavemente 
+        location.reload(); 
+      } catch (err) { 
+        console.log('🔄 Sin actualización disponible o offline.'); 
+      } 
+    } 
+ 
+    function verifySignature(manifest) { 
+      // En producción: usa openpgp.js para verificar manifest.signature 
+      // Aquí simulamos verificación exitosa si hay versión 
+      return manifest.version && manifest.files; 
+    } 
+ 
+    async function applyUpdate(manifest) { 
+      const cache = caches.open('neuronex-v2'); 
+      for (const [file, hash] of Object.entries(manifest.files)) { 
+        const url = `http://nexa-ai.dev/neuronex/${file}`; 
+        const res = await fetch(url); 
+        if (res.ok) { 
+          (await cache).put(file, res); 
+          console.log(`✅ Actualizado: ${file}`); 
+        } 
+      } 
+      localStorage.setItem('neuronex_version', manifest.version); 
+    } 
+ 
+    // Ejecutar al cargar (solo si hay conexión) 
+    if (navigator.onLine) { 
+      setTimeout(checkForUpdate, 2000); // Espera 2s para no bloquear UI 
+    } 
+  </script>
+</body> 
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>NEXA OS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0c1a;
+      color: #00f3ff;
+      font-family: Roboto, -apple-system, sans-serif;
+      font-size: 16px;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) 
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    #logo-3d {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      width: 56px;
+      height: 56px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%2300f3ff"/><stop offset="100%" stop-color="%23ff00c8"/></linearGradient></defs><path d="M50,10 L90,50 L50,90 L10,50 Z" fill="url(%23g)" opacity="0.95"/></svg>') no-repeat center;
+      background-size: contain;
+      filter: drop-shadow(0 0 8px rgba(0,243,255,0.6));
+      transform: rotateY(15deg) rotateX(8deg);
+      animation: float 4s infinite ease-in-out;
+      pointer-events: none;
+    }
+    @keyframes float {
+      0%,100% { transform: rotateY(15deg) rotateX(8deg) translateY(0); }
+      50% { transform: rotateY(15deg) rotateX(8deg) translateY(-6px); }
+    }
+    #status {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div id="logo-3d"></div>
+  <div id="status">NEXA OS • Android • Listo</div>
+
+  <script>
+    function speak() {
+      if ('speechSynthesis' in window) {
+        const msg = new SpeechSynthesisUtterance('NEXA OS activado en Android.');
+        msg.lang = 'es-ES';
+        msg.rate = 0.9;
+        speechSynthesis.speak(msg);
+      }
+    }
+
+    // En Android WebView, esperamos un gesto del usuario
+    document.body.addEventListener('touchstart', () => {
+      speak();
+      document.body.removeEventListener('touchstart', speak);
+    }, { once: true });
+  </script>
+</body>
+</html>

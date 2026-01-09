@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Neuronex Pulse</string>
+    <string name="title_activity_main">Neuronex Pulse</string>
+    <string name="package_name">com.nexa.neuronex</string>
+    <string name="custom_url_scheme">com.nexa.neuronex</string>
+</resources>
