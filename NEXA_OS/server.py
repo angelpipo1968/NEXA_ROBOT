@@ -23,7 +23,10 @@ import google.generativeai as genai
 # Configuración del servidor
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app) # Permitir CORS para la app móvil
-app.config['SECRET_KEY'] = 'nexa_secret_os_key'
+
+# Clave secreta para sesiones (Importante en producción)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'nexa_secret_os_key_dev')
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- CONFIGURACIÓN DE IA (GEMINI) ---

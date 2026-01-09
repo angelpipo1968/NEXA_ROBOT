@@ -9,6 +9,7 @@ Para que NEXA funcione en la nube, Render necesita saber tus claves secretas.
 
 NOMBRE (Key)          | VALOR (Value)
 --------------------- | --------------------------------------------------
+SECRET_KEY            | 34b0ec7038da8e49e923a1468ea44e07
 GEMINI_API_KEY        | (Pega tu clave de Gemini aquí)
 STRIPE_SECRET_KEY     | (Pega tu clave de Stripe aquí)
 MONGO_URI             | (Pega tu conexión de MongoDB aquí, si tienes)
