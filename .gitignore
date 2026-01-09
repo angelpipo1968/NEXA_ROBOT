@@ -11,6 +11,9 @@ env/
 # Archivos de configuración con secretos (IMPORTANTE)
 config.json
 nexa_memory.db
+nexa-gpg-gen.txt
+*.key
+*.pem
 
 # Logs
 logs/
