@@ -9,9 +9,9 @@ console.log("🚀 NEXA OS Core Inicializando...");
 // === CONFIGURACIÓN GLOBAL ===
 // URL del Backend (Python/Flask)
 // CAMBIAR ESTO POR TU URL DE RENDER/VERCEL EN PRODUCCIÓN
-// const API_URL = 'https://nexa-app.onrender.com'; 
+const API_URL = 'https://nexa-app.onrender.com'; 
 // const API_URL = 'http://10.0.2.2:5000'; // Para emulador Android (Localhost)
-const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL AUTOMÁTICA (Móvil y PC en misma Wi-Fi)
+// const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL AUTOMÁTICA (Móvil y PC en misma Wi-Fi)
 
 // Configuración de Socket.IO
 const socket = io(API_URL, {

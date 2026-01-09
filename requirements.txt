@@ -9,7 +9,7 @@ pywhatkit
 wikipedia
 customtkinter
 packaging
-opencv-python
+opencv-python-headless
 pyautogui
 flask
 flask-socketio
