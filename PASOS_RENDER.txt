@@ -1,0 +1,27 @@
+# QUÉ BUSCAR EN RENDER (GUÍA RÁPIDA)
+
+Estás en el Dashboard. Sigue la flecha ➡️
+
+1.  Busca arriba a la derecha el botón:
+    [ New + ]  <-- Color Azul o Morado
+
+2.  En el menú que sale, haz clic en:
+    [ Web Service ]
+
+3.  Verás una lista titulada "Connect a repository".
+    - Busca en la lista: `NEXA_ROBOT`
+    - Haz clic en el botón [ Connect ] al lado de ese nombre.
+
+    *(Si no ves NEXA_ROBOT, haz clic en "Configure account" o "GitHub App" para dar permiso).*
+
+4.  Te pedirá un "Name". Escribe:
+    `nexa-backend`
+
+5.  Baja hasta el final de la página y haz clic en el botón azul:
+    [ Create Web Service ]
+
+¡Y listo! Empezará a cargar cosas (logs). Espera a que termine.
+Cuando termine, arriba a la izquierda verás una URL:
+`https://nexa-backend-xxxx.onrender.com`
+
+Esa es tu URL para la App.
