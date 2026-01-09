@@ -12,6 +12,7 @@ packaging
 opencv-python-headless
 pyautogui
 flask
+gunicorn
 flask-socketio
 eventlet
 gunicorn
