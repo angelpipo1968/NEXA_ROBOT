@@ -37,12 +37,21 @@ Bienvenido a **NEXA ROBOT V2**, un asistente robótico avanzado diseñado para e
 - **Servidor Web**: Python o cualquier servidor estático para alojar los archivos.
 
 ### 2. Despliegue
+#### Opción A: Automática (Recomendada)
+Haz doble clic en el archivo `start_nexa.bat`. Se abrirán 3 ventanas de terminal automáticamente con todo lo necesario.
+
+#### Opción B: Manual
 1.  Ejecuta el servidor en la carpeta `deploy`:
     ```bash
     cd deploy
-    python -m http.server 8080
+    python cors_server.py 8081
     ```
-2.  Accede desde tu navegador: `http://localhost:8080`
+2.  (Opcional) Ejecuta el simulador de hardware:
+    ```bash
+    cd deploy
+    python mock_hardware.py
+    ```
+3.  Accede desde tu navegador: `http://localhost:8081`
 
 ### 3. Configuración en Móvil
 1.  Asegúrate de que tu móvil y PC estén en la misma red Wi-Fi.
