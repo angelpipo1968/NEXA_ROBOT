@@ -9,6 +9,11 @@ import jwt
 import stripe
 import datetime
 import webbrowser
+from dotenv import load_dotenv
+
+# Cargar variables de entorno (.env)
+load_dotenv()
+
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from nexa_agente.rag import rag_system
@@ -22,16 +27,11 @@ app.config['SECRET_KEY'] = 'nexa_secret_os_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- CONFIGURACIÓN DE IA (GEMINI) ---
-# Se carga desde config.json o variables de entorno
-def load_config():
-    config_path = os.path.join(BASE_DIR, "config.json")
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f: return json.load(f)
-    return {}
-
-CONFIG = load_config()
-GEMINI_KEY = os.getenv('GEMINI_API_KEY', CONFIG.get('GEMINI_API_KEY', ''))
-genai.configure(api_key=GEMINI_KEY)
+GEMINI_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY)
+else:
+    print("⚠️ [ADVERTENCIA] No se detectó GEMINI_API_KEY. La IA no funcionará.")
 
 # --- CONFIGURACIÓN DE STRIPE ---
 # ⚠️ REEMPLAZA CON TU CLAVE SECRETA DE STRIPE

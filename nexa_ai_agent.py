@@ -10,6 +10,10 @@ import subprocess
 import datetime
 import time
 import threading
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # ───── GESTIÓN DE DEPENDENCIAS ─────
 try:
