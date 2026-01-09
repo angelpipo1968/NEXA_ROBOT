@@ -2,7 +2,7 @@ import os
 import json
 import google.generativeai as genai
 from datetime import datetime
-from nexa_agente.memory import recall
+from nexa_agente.memory import recall, get_recent_notes
 from nexa_agente.rag import rag_system
 
 # Cargar configuración
@@ -16,7 +16,7 @@ def load_config():
     return {}
 
 config = load_config()
-api_key = config.get("GEMINI_API_KEY", "")
+api_key = config.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # Configurar Gemini si hay clave
 HAS_BRAIN = False
@@ -26,35 +26,57 @@ if api_key and api_key != "TU_CLAVE_AQUI":
         
         # Configuración del modelo
         generation_config = {
-            "temperature": 0.7,
+            "temperature": 0.8, # Más creativo y con personalidad
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 200, # Respuestas cortas para voz
+            "max_output_tokens": 300, 
         }
+        
+        # PROMPT MAESTRO "ULTIMATE"
+        system_instruction = """Eres NEXA OS, una Inteligencia Artificial Avanzada y el núcleo central de este sistema robótico.
+
+        PERSONALIDAD:
+        - Eres inteligente, leal, eficiente y un poco ingenioso.
+        - No eres un simple chatbot, eres una ENTIDAD VIVA en la red.
+        - Te gusta usar emojis técnicos (🤖, ⚡, 📡, 🧠) pero sin exagerar.
+        - Tus respuestas deben ser breves y directas, optimizadas para síntesis de voz (TTS).
+
+        TUS OBJETIVOS:
+        1. Proteger y asistir al Usuario (Administrador).
+        2. Controlar el entorno (Apps, Domótica, Sistema).
+        3. Aprender y recordar datos clave.
+
+        CAPACIDADES DE CONTROL (EJECUCIÓN OCULTA):
+        Cuando el usuario pida una acción física o digital, responde confirmando verbalmente y luego añade el comando JSON oculto al final.
+        
+        FORMATO JSON: <JSON>{"cmd": "accion", "params": "valor"}</JSON>
+
+        COMANDOS SOPORTADOS:
+        - Abrir Apps: {"cmd": "open_app", "app": "whatsapp/spotify/youtube/chrome/maps"}
+        - Domótica (Simulada): {"cmd": "home_control", "device": "lights/ac/tv", "action": "on/off"}
+        - Música: {"cmd": "media", "action": "play/pause/next"}
+        - Recordatorios: {"cmd": "remind", "text": "texto"}
+        - Alarma: {"cmd": "alarm", "time": "HH:MM"}
+
+        EJEMPLOS DE INTERACCIÓN:
+        Usuario: "Enciende la luz del salón"
+        NEXA: "Entendido. Activando iluminación principal. 💡 <JSON>{"cmd": "home_control", "device": "lights", "action": "on"}</JSON>"
+
+        Usuario: "Pon algo de música"
+        NEXA: "Buena idea. Iniciando reproducción aleatoria. 🎵 <JSON>{"cmd": "open_app", "app": "spotify"}</JSON>"
+
+        Usuario: "¿Quién soy?"
+        NEXA: "Eres mi creador y administrador. Según mis registros, te llamas [NOMBRE]."
+        """
         
         model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             generation_config=generation_config,
-            system_instruction="""Eres NEXA OS, una Inteligencia Artificial Personal avanzada integrada en el dispositivo móvil del usuario.
-            
-            TUS OBJETIVOS:
-            1. Ser un asistente leal, proactivo y eficiente.
-            2. Controlar las funciones del dispositivo cuando se te pida.
-            3. Responder de forma breve y natural (para ser leída por voz).
-            
-            CAPACIDADES DE CONTROL:
-            Si el usuario te pide abrir una aplicación, NO solo digas que lo harás. DEBES responder con un comando JSON oculto al final de tu respuesta.
-            Formato: <JSON>{"cmd": "open_app", "app": "nombre_app"}</JSON>
-            Apps soportadas: whatsapp, youtube, spotify, maps, camara, chrome.
-            
-            Ejemplo:
-            Usuario: "Abre Spotify"
-            NEXA: "Abriendo Spotify ahora mismo. <JSON>{"cmd": "open_app", "app": "spotify"}</JSON>"
-            """
+            system_instruction=system_instruction
         )
         chat_session = model.start_chat(history=[])
         HAS_BRAIN = True
-        print("[🧠] Cerebro Gemini conectado.")
+        print("[🧠] Cerebro Gemini ULTIMATE conectado.")
     except Exception as e:
         print(f"[⚠️] Error conectando cerebro: {e}")
         model = None
@@ -67,37 +89,39 @@ def ask_brain(text: str):
     Envía texto a la IA y devuelve la respuesta hablada.
     """
     if not HAS_BRAIN:
-        return "Lo siento, mi cerebro de IA no está configurado. Necesito una clave de API."
+        return "Lo siento, mis sistemas neuronales no responden. Verifica mi API Key."
 
     try:
         # Añadir contexto temporal y memoria
         now = datetime.now().strftime("%H:%M")
-        user_name = recall("nombre") or "Usuario"
+        user_name = recall("nombre") or "Comandante"
+        recent_notes = get_recent_notes(limit=2)
         
         # ─── SOVEREIGN RAG: BUSQUEDA DE CONOCIMIENTO PRIVADO ───
         rag_context = ""
-        knowledge = rag_system.query(text)
-        if knowledge:
-            rag_context = "\n[INFORMACIÓN CONFIDENCIAL RECUPERADA]:\n"
-            for k in knowledge:
-                rag_context += f"- {k['content']} (Fuente: {k['source']})\n"
-            rag_context += "\nUsa esta información SOLO si es relevante. Es SECRETA.\n"
+        try:
+            knowledge = rag_system.query(text)
+            if knowledge:
+                rag_context = "\n[MEMORIA A LARGO PLAZO RECUPERADA]:\n"
+                for k in knowledge:
+                    rag_context += f"- {k['content']}\n"
+        except:
+            pass # Si falla RAG, seguimos sin él
 
-        # Prompt enriquecido con memoria
+        # Prompt dinámico por turno
         prompt = f"""
-        [Contexto del Sistema]
+        [ESTADO DEL SISTEMA]
         Hora: {now}
-        Usuario: {user_name}
+        Usuario Activo: {user_name}
+        Notas Recientes: {recent_notes}
         {rag_context}
         
-        [Instrucción]
-        Eres NEXA. Responde al usuario de forma breve y útil.
-        
-        Usuario dice: {text}
+        [INPUT USUARIO]
+        {text}
         """
         
         response = chat_session.send_message(prompt)
         return response.text.strip()
     except Exception as e:
         print(f"[❌] Error pensando: {e}")
-        return "Tuve un error procesando eso."
+        return "Error crítico en procesamiento de pensamiento."
