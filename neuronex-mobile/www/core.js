@@ -1094,6 +1094,15 @@ window.addEventListener('load', () => {
           fetchLocalAI(null); // null triggers idle thought
       }
   }, 10000); // Check every 10s
+
+  setTimeout(() => {
+      // Efecto de carga inicial
+      const overlay = document.getElementById('vision-overlay');
+      if(overlay) {
+          overlay.textContent = "NEXA OS V3.0 (ULTIMATE) - ONLINE";
+          setTimeout(() => overlay.textContent = "", 3000);
+      }
+  }, 1000);
 });
 
 // === ACTUALIZACIÓN AUTOMÁTICA ===
