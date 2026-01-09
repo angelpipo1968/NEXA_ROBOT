@@ -48,7 +48,8 @@ function processLocalCommand(text) {
     const cmd = text.toLowerCase();
     
     if (cmd.includes('abrir whatsapp')) {
-        window.location.href = "whatsapp://";
+        // Usar enlace universal para soportar Business y Normal
+        window.location.href = "https://wa.me/";
         return true;
     }
     if (cmd.includes('abrir youtube')) {
@@ -423,100 +424,55 @@ async function fetchLocalAI(userPrompt = null) {
   }
 }
 
-// === INTERFAZ DE VOZ (SPEECH-TO-TEXT) ===
-function initVoiceInterface() {
-    const micBtn = document.getElementById('mic-btn');
-    const micStatus = document.getElementById('mic-status');
-    const visionBtn = document.getElementById('vision-btn');
-    const hardwareBtn = document.getElementById('hardware-btn');
-    const knowledgeBtn = document.getElementById('knowledge-btn');
-    const settingsBtn = document.getElementById('settings-btn');
-    
-    // Verificar soporte
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        micBtn.style.display = 'none';
-        console.warn("Speech Recognition no soportado en este navegador.");
-        return;
-    }
+// === VOICE RECOGNITION (STT) ===
+// Soporte para móviles Android (Chrome/WebView)
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+if (micBtn && SpeechRecognition) {
     const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
     recognition.continuous = false;
-    recognition.lang = COLORS[LANG].voice;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
 
     micBtn.addEventListener('click', () => {
         try {
             recognition.start();
+            console.log("🎤 Micrófono activado");
         } catch (e) {
-            console.error("Error al iniciar reconocimiento:", e);
+            console.warn("Reinicio de reconocimiento", e);
+            recognition.stop();
         }
     });
 
     recognition.onstart = () => {
-        micBtn.classList.add('mic-listening');
-        micStatus.textContent = "Escuchando...";
-        setEmotion('ANALIZANDO');
+        micBtn.classList.add('listening');
+        if(textInput) textInput.placeholder = "Escuchando...";
     };
 
     recognition.onend = () => {
-        micBtn.classList.remove('mic-listening');
-        micStatus.textContent = "";
+        micBtn.classList.remove('listening');
+        if(textInput) textInput.placeholder = "Escribe un comando...";
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        console.log("Voz detectada:", transcript);
-        
-        // Comandos de Voz Directos (Skill System)
-        if (transcript.includes("enciende la luz") || transcript.includes("prende la luz")) {
-            sendHardwareCommand('led_on');
-            return;
-        }
-        if (transcript.includes("apaga la luz")) {
-            sendHardwareCommand('led_off');
-            return;
-        }
-        if (transcript.includes("escanear") || transcript.includes("analizar sistema")) {
-            sendHardwareCommand('scan');
-            return;
-        }
-        if (transcript.includes("mi nombre es") || transcript.includes("llámame")) {
-            const name = transcript.split(" ").pop(); // Simplificación: toma la última palabra
-            const response = setUserName(name);
-            const qwenElement = document.getElementById('qwen-3d');
-            qwenElement.innerHTML = `<strong>${TEXTS[LANG].qwen}</strong> ${response} [FELIZ]`;
-            if ('speechSynthesis' in window) {
-                const c = COLORS[LANG];
-                const msg = new SpeechSynthesisUtterance(response);
-                msg.lang = c.voice;
-                speechSynthesis.speak(msg);
-            }
-            setEmotion('FELIZ');
-            return;
-        }
-
-        // Si no es un comando directo, enviar a la IA
-        fetchLocalAI(transcript);
+        const transcript = event.results[0][0].transcript;
+        console.log("🗣️ Escuchado:", transcript);
+        if(textInput) textInput.value = transcript;
+        sendCommand(transcript);
     };
-
+    
     recognition.onerror = (event) => {
-        console.error("Error de voz:", event.error);
-        micStatus.textContent = "Error";
-        micBtn.classList.remove('mic-listening');
-        setEmotion('ALERTA');
+         console.error("STT Error:", event.error);
+         micBtn.classList.remove('listening');
+         if(textInput) textInput.placeholder = "Error micrófono. Intenta escribir.";
+         
+         if (event.error === 'not-allowed') {
+             alert("Permiso de micrófono denegado. Verifica la configuración de la App.");
+         }
     };
-
-    // Toggle Panels
-    visionBtn.addEventListener('click', () => togglePanel('vision-panel'));
-    hardwareBtn.addEventListener('click', () => togglePanel('hardware-panel'));
-    knowledgeBtn.addEventListener('click', () => togglePanel('knowledge-panel'));
-    settingsBtn.addEventListener('click', () => {
-        loadSettingsToUI();
-        togglePanel('settings-panel');
-    });
+} else if (micBtn) {
+    micBtn.style.display = 'none';
+    console.warn("Speech Recognition no soportado en este navegador.");
 }
 
 // === GESTIÓN DE PANELES (OPTIMIZADO MÓVIL) ===
