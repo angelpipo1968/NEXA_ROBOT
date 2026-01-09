@@ -43,29 +43,57 @@ function sendCommand(text) {
     textInput.value = '';
 }
 
-// Procesador de Comandos Locales (App Launcher)
-function processLocalCommand(text) {
+// Procesador de Comandos Locales (App Launcher Nativo)
+async function processLocalCommand(text) {
     const cmd = text.toLowerCase();
     
-    if (cmd.includes('abrir whatsapp')) {
-        // Usar enlace universal para soportar Business y Normal
-        window.location.href = "https://wa.me/";
+    // Función auxiliar para abrir apps
+    const launch = async (scheme, packageName) => {
+        console.log(`🚀 Intentando abrir: ${scheme}`);
+        try {
+            // 1. Intentar Capacitor AppLauncher (Nativo)
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppLauncher) {
+                const { AppLauncher } = window.Capacitor.Plugins;
+                // Verificar si puede abrir la url (Android 11+ requiere <queries>)
+                const canOpen = await AppLauncher.canOpenUrl({ url: scheme });
+                if (canOpen.value) {
+                    await AppLauncher.openUrl({ url: scheme });
+                    return true;
+                } else {
+                    console.warn(`⚠️ AppLauncher dice que no puede abrir ${scheme}`);
+                }
+            }
+        } catch (e) {
+            console.error("Error plugin AppLauncher:", e);
+        }
+
+        // 2. Fallback: window.open con _system (Capacitor/Cordova)
+        try {
+            window.open(scheme, '_system');
+            return true;
+        } catch (e) {
+            console.error("Error window.open:", e);
+        }
+
+        // 3. Fallback final: location.href
+        window.location.href = scheme;
         return true;
+    };
+
+    if (cmd.includes('abrir whatsapp')) {
+        // Universal Link para WhatsApp
+        return await launch("https://wa.me/", "com.whatsapp");
     }
     if (cmd.includes('abrir youtube')) {
-        window.location.href = "vnd.youtube://"; 
-        return true;
+        return await launch("vnd.youtube://", "com.google.android.youtube");
     }
     if (cmd.includes('abrir spotify')) {
-        window.location.href = "spotify://"; 
-        return true;
+        return await launch("spotify://", "com.spotify.music");
     }
     if (cmd.includes('abrir maps') || cmd.includes('abrir mapa')) {
-        window.location.href = "geo:0,0?q="; 
-        return true;
+        return await launch("geo:0,0?q=", "com.google.android.apps.maps");
     }
     if (cmd.includes('abrir cámara') || cmd.includes('abrir camara')) {
-        // Intentar abrir cámara nativa
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
@@ -74,8 +102,7 @@ function processLocalCommand(text) {
         return true;
     }
     if (cmd.includes('abrir chrome') || cmd.includes('navegador')) {
-        window.location.href = "googlechrome://"; 
-        return true;
+        return await launch("googlechrome://", "com.android.chrome");
     }
     return false;
 }
@@ -424,55 +451,82 @@ async function fetchLocalAI(userPrompt = null) {
   }
 }
 
-// === VOICE RECOGNITION (STT) ===
-// Soporte para móviles Android (Chrome/WebView)
+// === VOICE RECOGNITION (STT - NATIVO & WEB) ===
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if (micBtn && SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-ES';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+if (micBtn) {
+    micBtn.addEventListener('click', async () => {
+        // Obtener referencia al plugin en tiempo de ejecución
+        const NativeSpeech = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition) 
+            ? window.Capacitor.Plugins.SpeechRecognition 
+            : null;
 
-    micBtn.addEventListener('click', () => {
-        try {
-            recognition.start();
-            console.log("🎤 Micrófono activado");
-        } catch (e) {
-            console.warn("Reinicio de reconocimiento", e);
-            recognition.stop();
+        // INTENTO 1: PLUGIN NATIVO (Android/iOS)
+        if (NativeSpeech) {
+            try {
+                // Verificar permisos
+                const perm = await NativeSpeech.checkPermissions();
+                if (perm.speechRecognition !== 'granted') {
+                    await NativeSpeech.requestPermissions();
+                }
+                
+                micBtn.classList.add('listening');
+                if(textInput) textInput.placeholder = "Escuchando (Nativo)...";
+                
+                const { value } = await NativeSpeech.start({
+                    language: "es-ES",
+                    maxResults: 1,
+                    prompt: "Di un comando...",
+                    popup: false
+                });
+                
+                if (value && value.length > 0) {
+                    const transcript = value[0];
+                    console.log("🗣️ Nativo:", transcript);
+                    if(textInput) textInput.value = transcript;
+                    sendCommand(transcript);
+                }
+                
+                micBtn.classList.remove('listening');
+                if(textInput) textInput.placeholder = "Escribe un comando...";
+                return; // Éxito nativo
+                
+            } catch (e) {
+                console.warn("Fallo STT Nativo, probando Web:", e);
+                micBtn.classList.remove('listening');
+                // Continuar a Intento 2
+            }
+        }
+
+        // INTENTO 2: WEB API (Chrome/Desktop)
+        if (SpeechRecognition) {
+            try {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES';
+                recognition.continuous = false;
+                
+                recognition.onstart = () => {
+                    micBtn.classList.add('listening');
+                    if(textInput) textInput.placeholder = "Escuchando (Web)...";
+                };
+                
+                recognition.onend = () => micBtn.classList.remove('listening');
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    if(textInput) textInput.value = transcript;
+                    sendCommand(transcript);
+                };
+                
+                recognition.start();
+            } catch (e) {
+                console.error("Fallo STT Web:", e);
+                alert("No se pudo activar el micrófono.");
+            }
+        } else {
+            alert("Tu dispositivo no soporta reconocimiento de voz.");
         }
     });
-
-    recognition.onstart = () => {
-        micBtn.classList.add('listening');
-        if(textInput) textInput.placeholder = "Escuchando...";
-    };
-
-    recognition.onend = () => {
-        micBtn.classList.remove('listening');
-        if(textInput) textInput.placeholder = "Escribe un comando...";
-    };
-
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        console.log("🗣️ Escuchado:", transcript);
-        if(textInput) textInput.value = transcript;
-        sendCommand(transcript);
-    };
-    
-    recognition.onerror = (event) => {
-         console.error("STT Error:", event.error);
-         micBtn.classList.remove('listening');
-         if(textInput) textInput.placeholder = "Error micrófono. Intenta escribir.";
-         
-         if (event.error === 'not-allowed') {
-             alert("Permiso de micrófono denegado. Verifica la configuración de la App.");
-         }
-    };
-} else if (micBtn) {
-    micBtn.style.display = 'none';
-    console.warn("Speech Recognition no soportado en este navegador.");
 }
 
 // === GESTIÓN DE PANELES (OPTIMIZADO MÓVIL) ===
