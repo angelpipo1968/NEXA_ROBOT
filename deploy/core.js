@@ -744,6 +744,38 @@ function updateSensorUI(distance) {
     }
 }
 
+async function uploadDocument() {
+    const fileInput = document.getElementById('docUpload');
+    const status = document.getElementById('uploadStatus');
+    
+    if (fileInput.files.length === 0) {
+        status.innerText = "❌ Selecciona un archivo primero.";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    status.innerText = "⏳ Subiendo...";
+    
+    try {
+        const response = await fetch(`${API_URL}/upload_knowledge`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            status.innerText = "✅ Documento aprendido.";
+            fileInput.value = "";
+        } else {
+            status.innerText = "❌ Error al subir.";
+        }
+    } catch (error) {
+        status.innerText = "❌ Error de conexión.";
+        console.error(error);
+    }
+}
+
 // === INICIO === 
 window.addEventListener('load', () => { 
   loadMemory(); 

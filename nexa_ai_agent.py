@@ -22,6 +22,7 @@ try:
     from nexa_agente.interface import launch_gui
     from nexa_agente.vision import vision_system
     from nexa_agente.update_verifier import UpdateVerifier
+    from nexa_agente.rag import rag_system
 except ImportError as e:
     print(f"\n[❌] ERROR FATAL: Falta una dependencia crítica: {e}")
     print("[ℹ️] Ejecuta 'install_requirements.bat' para corregirlo.")
@@ -263,5 +264,13 @@ if __name__ == "__main__":
         print(f"[⚠️] Error en verificación de actualizaciones: {e}")
         print("[ℹ️] Continuando inicio normal...")
 
+    # ───── INGESTIÓN DE CONOCIMIENTO (RAG) ─────
+    print("[📚] Escaneando carpeta 'knowledge'...")
+    knowledge_dir = os.path.join(BASE_DIR, "knowledge")
+    if os.path.exists(knowledge_dir):
+        for filename in os.listdir(knowledge_dir):
+            if filename.endswith(".txt"):
+                rag_system.ingest_file(os.path.join(knowledge_dir, filename))
+    
     # Lanzar la GUI (que a su vez lanza el agent_loop en un hilo)
     launch_gui(agent_loop)

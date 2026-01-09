@@ -17,3 +17,4 @@ flask-socketio
 eventlet
 gunicorn
 python-gnupg
+flask-cors

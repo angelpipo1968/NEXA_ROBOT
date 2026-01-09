@@ -51,6 +51,13 @@
     <div id="knowledge-panel" class="panel-hidden">
         <textarea id="rag-input" placeholder="Escribe información para que NEXA la recuerde... (ej. 'La clave del WiFi es 1234')"></textarea>
         <button class="hw-btn" onclick="saveKnowledge()">💾 Guardar Dato</button>
+        
+        <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+            <input type="file" id="docUpload" accept=".txt,.pdf,.md" style="width: 100%; margin-bottom: 5px;">
+            <button class="hw-btn" onclick="uploadDocument()">Subir Documento 📤</button>
+            <p id="uploadStatus" style="font-size: 10px; color: #00f3ff; margin-top: 5px;"></p>
+        </div>
+
         <div id="rag-status" style="font-size: 10px; margin-top: 5px; color: #00f3ff;"></div>
     </div>
 

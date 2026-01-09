@@ -3,6 +3,7 @@ import json
 import google.generativeai as genai
 from datetime import datetime
 from nexa_agente.memory import recall
+from nexa_agente.rag import rag_system
 
 # Cargar configuración
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,11 +59,21 @@ def ask_brain(text: str):
         now = datetime.now().strftime("%H:%M")
         user_name = recall("nombre") or "Usuario"
         
+        # ─── SOVEREIGN RAG: BUSQUEDA DE CONOCIMIENTO PRIVADO ───
+        rag_context = ""
+        knowledge = rag_system.query(text)
+        if knowledge:
+            rag_context = "\n[INFORMACIÓN CONFIDENCIAL RECUPERADA]:\n"
+            for k in knowledge:
+                rag_context += f"- {k['content']} (Fuente: {k['source']})\n"
+            rag_context += "\nUsa esta información SOLO si es relevante. Es SECRETA.\n"
+
         # Prompt enriquecido con memoria
         prompt = f"""
         [Contexto del Sistema]
         Hora: {now}
         Usuario: {user_name}
+        {rag_context}
         
         [Instrucción]
         Eres NEXA. Responde al usuario de forma breve y útil.
