@@ -20,6 +20,92 @@ const socket = io(API_URL, {
     rejectUnauthorized: false // Aceptar certificados auto-firmados en desarrollo
 });
 
+// === UI DASHBOARD CONTROLLER ===
+const aiResponseEl = document.getElementById('ai-response');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const textInput = document.getElementById('text-input');
+const sendBtn = document.getElementById('send-btn');
+const micBtn = document.getElementById('mic-btn');
+
+// Función para enviar comandos
+function sendCommand(text) {
+    if (!text) return;
+    
+    // Mostrar en UI
+    if(aiResponseEl) aiResponseEl.innerText = `>> ${text}`;
+    
+    // Procesar comandos locales (Abrir Apps)
+    if (processLocalCommand(text)) return;
+
+    // Enviar al cerebro (Nube)
+    socket.emit('user_command', { text: text, lang: 'es' });
+    textInput.value = '';
+}
+
+// Procesador de Comandos Locales (App Launcher)
+function processLocalCommand(text) {
+    const cmd = text.toLowerCase();
+    
+    if (cmd.includes('abrir whatsapp')) {
+        window.location.href = "whatsapp://";
+        return true;
+    }
+    if (cmd.includes('abrir youtube')) {
+        window.location.href = "vnd.youtube://"; // Intent Android
+        return true;
+    }
+    if (cmd.includes('abrir cámara') || cmd.includes('abrir camara')) {
+        // Usar input file nativo si es web, o plugin si es nativo
+        document.getElementById('camera-input')?.click(); 
+        return true;
+    }
+    return false;
+}
+
+// Event Listeners
+if (sendBtn) {
+    sendBtn.addEventListener('click', () => sendCommand(textInput.value));
+}
+if (textInput) {
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendCommand(textInput.value);
+    });
+}
+
+// === SOCKET EVENTS ===
+socket.on('connect', () => {
+    console.log("✅ Conectado al Núcleo");
+    if(statusDot) {
+        statusDot.classList.add('online');
+        statusText.innerText = "ONLINE - NEXA CLOUD";
+    }
+});
+
+socket.on('disconnect', () => {
+    console.log("❌ Desconectado");
+    if(statusDot) {
+        statusDot.classList.remove('online');
+        statusText.innerText = "OFFLINE - RECONNECTING...";
+    }
+});
+
+socket.on('nexa_response', (data) => {
+    console.log("🤖 NEXA:", data.text);
+    if(aiResponseEl) {
+        aiResponseEl.innerText = data.text;
+        // Leer en voz alta (TTS)
+        speak(data.text);
+    }
+});
+
+// TTS Simple
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    window.speechSynthesis.speak(utterance);
+}
+
 // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
 const TEXTS = { 
   es: { title: "NEURONEX PULSO", qwen: "Insight de Qwen:", news: "Última noticia:", rag: "Sovereign-RAG:", intro: "Conectando con la conciencia colectiva." }, 
