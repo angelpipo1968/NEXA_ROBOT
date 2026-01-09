@@ -9,9 +9,9 @@ console.log("🚀 NEXA OS Core Inicializando...");
 // === CONFIGURACIÓN GLOBAL ===
 // URL del Backend (Python/Flask)
 // CAMBIAR ESTO POR TU URL DE RENDER/VERCEL EN PRODUCCIÓN
-const API_URL = 'https://nexa-app.onrender.com'; 
+// const API_URL = 'https://nexa-app.onrender.com'; 
 // const API_URL = 'http://10.0.2.2:5000'; // Para emulador Android (Localhost)
-// const API_URL = 'http://localhost:5000'; // Para pruebas web locales
+const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL AUTOMÁTICA (Móvil y PC en misma Wi-Fi)
 
 // Configuración de Socket.IO
 const socket = io(API_URL, {
@@ -522,18 +522,28 @@ function startCamera() {
     // Lógica movida de toggleVision
     const video = document.getElementById('camera-feed');
     const overlay = document.getElementById('vision-overlay');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Tu dispositivo no soporta acceso a cámara web.");
+        overlay.textContent = "Error: API Cámara no soportada.";
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) // Intentar cámara trasera primero
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })) // Fallback a frontal
         .then(stream => {
             videoStream = stream;
             video.srcObject = videoStream;
+            video.play(); // Asegurar reproducción
             overlay.textContent = "Analizando entorno...";
             setEmotion('ANALIZANDO');
-            analyzeFrame();
-            detectFacesLoop();
+            // analyzeFrame(); // Manual trigger only
+            // detectFacesLoop(); // Manual trigger only
         })
         .catch(err => {
             console.error("Error cámara:", err);
-            overlay.textContent = "Error: Cámara no accesible.";
+            overlay.textContent = "Error: Cámara bloqueada o no encontrada.";
+            alert("Error al abrir cámara: " + err.name + "\nVerifica permisos en Ajustes > Apps > NEXA");
         });
 }
 
@@ -652,9 +662,6 @@ async function detectFacesLoop() {
 async function analyzeFrame() {
     if (!videoStream || document.getElementById('vision-panel').classList.contains('panel-hidden')) return;
     
-    // Solo analizamos con LLaVA si el usuario lo pide o cada mucho tiempo para no saturar
-    // Por ahora, lo mantenemos manual o lento (cada 10s)
-    
     const video = document.getElementById('camera-feed');
     const canvas = document.getElementById('vision-canvas');
     const overlay = document.getElementById('vision-overlay');
@@ -665,42 +672,66 @@ async function analyzeFrame() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Convertir a base64 (sin el prefijo de data url para la API de Ollama a veces, pero OpenAI format lo suele requerir completo, ajustaremos según la API de Ollama/OpenAI compat)
-    // Ollama con compatibilidad OpenAI suele aceptar URL de datos.
-    const imageBase64 = canvas.toDataURL('image/jpeg').split(',')[1]; // Solo la data base64
+    // Compresión Agresiva (0.5) para velocidad móvil
+    const imageBase64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
     
-    // overlay.textContent = "🧠 Procesando imagen..."; // Comentado para no interferir con FaceID
+    overlay.textContent = "📡 Enviando al cerebro...";
+    overlay.style.color = "#ffff00"; 
+    setEmotion('ANALIZANDO');
+    speak("Analizando imagen..."); // Feedback auditivo inmediato
     
     try {
-        // Usar endpoint de visión del backend (Gemini Proxy)
+        // Ping de diagnóstico
+        const t0 = Date.now();
+        console.log("📡 Iniciando petición de visión...");
+        
+        // Timeout de 15 segundos
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
         const response = await fetch(`${API_URL}/api/vision`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 image: imageBase64,
-                prompt: "Describe brevemente qué ves en esta imagen. Sé conciso y técnico, como un robot."
-            })
+                prompt: "Describe brevemente qué ves. Identifica objetos y personas."
+            }),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        const t1 = Date.now();
+        console.log(`⏱️ Tiempo respuesta: ${t1-t0}ms`);
 
-        if (!response.ok) throw new Error('Error en visión IA');
+        if (!response.ok) {
+            throw new Error(`Error Servidor ${response.status}`);
+        }
 
         const data = await response.json();
-        const description = data.choices[0].message.content;
+        const description = data.choices ? data.choices[0].message.content : data.text; 
         
-        // overlay.textContent = `👁️ ${description}`;
-        console.log(`[VISIÓN CLOUD] ${description}`);
+        overlay.textContent = `👁️ ${description}`;
+        overlay.style.color = "#00ff00"; 
+        console.log(`[VISIÓN] ${description}`);
+        setEmotion('FELIZ'); 
         
-        // Guardar en memoria
         chatHistory.push({ role: "system", content: `[VISIÓN] Veo: ${description}` });
         saveMemory();
+        speak(description); // Hablar resultado
 
     } catch (err) {
         console.error("Error visión:", err);
-        // overlay.textContent = "⚠️ Error de análisis visual";
+        let msg = "Error de conexión.";
+        if (err.name === 'AbortError') msg = "Tiempo de espera agotado.";
+        
+        overlay.textContent = "⚠️ " + msg;
+        overlay.style.color = "#ff0000"; 
+        setEmotion('ALERTA');
+        speak(msg + " Intenta de nuevo.");
+        alert("Fallo Visión: " + msg + "\n" + err.message);
     }
     
-    // Para simplificar el flujo, comentamos el loop automático de LLaVA si usamos FaceID intensivo
-    // setTimeout(analyzeFrame, 10000); 
+    // Auto-loop desactivado para no saturar API. Solo manual o eventos.
 }
 
 // === CONTROL DE HARDWARE (MANOS DEL ROBOT) ===
@@ -998,6 +1029,36 @@ async function upgradePro() {
             status.innerText = "❌ Error iniciando pago";
         }
     } catch (e) { status.innerText = "❌ Error red"; }
+}
+
+function setEmotion(emotion) {
+    const particlesMaterial = particles ? particles.material : null;
+    const logo3d = document.getElementById('logo-3d');
+    
+    // Cambios visuales según emoción
+    switch(emotion) {
+        case 'FELIZ':
+            if(particlesMaterial) particlesMaterial.color.setHex(0x00ff00); // Verde
+            if(logo3d) logo3d.style.filter = "drop-shadow(0 0 20px #00ff00)";
+            break;
+        case 'ALERTA':
+            if(particlesMaterial) particlesMaterial.color.setHex(0xff0000); // Rojo
+            if(logo3d) logo3d.style.filter = "drop-shadow(0 0 20px #ff0000)";
+            break;
+        case 'ANALIZANDO':
+            if(particlesMaterial) particlesMaterial.color.setHex(0xffff00); // Amarillo
+            if(logo3d) logo3d.style.filter = "drop-shadow(0 0 20px #ffff00)";
+            break;
+        case 'TRISTE':
+            if(particlesMaterial) particlesMaterial.color.setHex(0x0000ff); // Azul
+            if(logo3d) logo3d.style.filter = "drop-shadow(0 0 20px #0000ff)";
+            break;
+        case 'NEUTRO':
+        default:
+            if(particlesMaterial) particlesMaterial.color.setHex(0x00f3ff); // Cyan original
+            if(logo3d) logo3d.style.filter = "drop-shadow(0 0 12px rgba(0,243,255,0.8))";
+            break;
+    }
 }
 
 // === INICIO === 
