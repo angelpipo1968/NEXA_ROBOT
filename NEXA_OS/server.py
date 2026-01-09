@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Agregar directorio raíz al path para poder importar nexa_agente
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from flask import Flask, render_template, request, jsonify, redirect
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -242,16 +248,14 @@ def start_server():
 
     print("------------------------------------------")
     
-    # Abrir navegador automáticamente
-    threading.Timer(1.5, lambda: webbrowser.open("https://localhost:5000")).start()
+    # Iniciar servidor (FORZADO HTTP para evitar errores de SSL/Eventlet)
+    print("⚠️ Modo HTTP Forzado para Debugging Local")
+    print("🌐 Entra a: http://localhost:5000")
     
-    # Iniciar servidor
-    try:
-        socketio.run(app, host='0.0.0.0', port=5000, ssl_context=ssl_context)
-    except Exception as e:
-        print(f"⚠️ Error iniciando SSL: {e}. Iniciando en modo HTTP inseguro.")
-        print("🌐 Entra a: http://localhost:5000")
-        socketio.run(app, host='0.0.0.0', port=5000)
+    # Abrir navegador automáticamente
+    threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5000")).start()
+
+    socketio.run(app, host='0.0.0.0', port=5000)
 
 if __name__ == '__main__':
     start_server()

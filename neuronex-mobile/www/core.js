@@ -9,9 +9,9 @@ console.log("🚀 NEXA OS Core Inicializando...");
 // === CONFIGURACIÓN GLOBAL ===
 // URL del Backend (Python/Flask)
 // CAMBIAR ESTO POR TU URL DE RENDER/VERCEL EN PRODUCCIÓN
-const API_URL = 'https://nexa-app.onrender.com'; 
+// const API_URL = 'https://nexa-app.onrender.com'; 
 // const API_URL = 'http://10.0.2.2:5000'; // Para emulador Android (Localhost)
-// const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL AUTOMÁTICA (Móvil y PC en misma Wi-Fi)
+const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL (Modo Seguro)
 
 // Configuración de Socket.IO
 const socket = io(API_URL, {
@@ -27,6 +27,42 @@ const statusText = document.getElementById('status-text');
 const textInput = document.getElementById('text-input');
 const sendBtn = document.getElementById('send-btn');
 const micBtn = document.getElementById('mic-btn');
+
+// === BOTONES DE UI ===
+const btnSettings = document.getElementById('settings-btn');
+if(btnSettings) {
+    btnSettings.addEventListener('click', () => {
+         const panel = document.getElementById('settings-panel');
+         panel.classList.toggle('panel-hidden');
+         speak("Abriendo configuración.");
+    });
+}
+
+const btnKnowledge = document.getElementById('knowledge-btn');
+if(btnKnowledge) {
+    btnKnowledge.addEventListener('click', () => {
+         const panel = document.getElementById('knowledge-panel');
+         panel.classList.toggle('panel-hidden');
+         speak("Accediendo a archivos.");
+    });
+}
+
+const btnPower = document.getElementById('power-btn');
+if(btnPower) {
+    btnPower.addEventListener('click', () => {
+         speak("Apagando sistemas.");
+         setTimeout(() => {
+             if(navigator.app && navigator.app.exitApp) {
+                 navigator.app.exitApp();
+             } else {
+                 window.close();
+             }
+         }, 1000);
+    });
+}
+
+// === BOTONES DE ACCIÓN ===
+const btnVision = document.getElementById('vision-btn');
 
 // Función para enviar comandos
 function sendCommand(text) {

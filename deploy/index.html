@@ -23,7 +23,7 @@
             </div>
             <div class="header-controls">
                 <span id="lang-code">EN</span>
-                <button id="settings-btn" class="icon-btn">⚙️</button>
+                <button id="power-btn" class="icon-btn" style="color: #ff0055;">❌</button>
                 <button id="login-btn" class="icon-btn" onclick="togglePanel('login-panel')">👤</button>
             </div>
         </header>
@@ -130,11 +130,8 @@
  
   <div id="footer">NEXA Ai.Dev • http://nexa-ai.dev  • Multilingual 3D Core • Idioma: <span id="lang-code">es</span></div> 
  
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <script src="https://js.stripe.com/v3/"></script>
-    <script src="virtual-joystick.js"></script>
-    <script src="config.js"></script>
+    <script src="socket.io.min.js"></script>
+    <script src="joystick.js"></script>
     <script src="core.js"></script>
 </body> 
 </html>

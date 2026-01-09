@@ -1,4 +1,12 @@
 // === DETECCIÓN DE IDIOMA === 
+alert("NEXA SYSTEM STARTING..."); // LOUD DEBUGGING
+console.log("🚀 NEXA OS Core Loading...");
+
+// === GLOBAL VARIABLES (HOISTED) ===
+let videoStream = null; // Prevent TDZ issues
+let faceMatcher = null;
+let isFaceModelLoaded = false;
+
 const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase(); 
 const SUPPORTED_LANGS = ['es','en','zh','fr','de','ja','pt','ar','ru','hi','ko']; 
 const LANG = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en'; 
@@ -9,16 +17,29 @@ console.log("🚀 NEXA OS Core Inicializando...");
 // === CONFIGURACIÓN GLOBAL ===
 // URL del Backend (Python/Flask)
 // CAMBIAR ESTO POR TU URL DE RENDER/VERCEL EN PRODUCCIÓN
-const API_URL = 'https://nexa-app.onrender.com'; 
+// const API_URL = 'https://nexa-app.onrender.com'; 
 // const API_URL = 'http://10.0.2.2:5000'; // Para emulador Android (Localhost)
-// const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL AUTOMÁTICA (Móvil y PC en misma Wi-Fi)
+const API_URL = 'http://192.168.12.227:5000'; // IP LOCAL (Modo Seguro)
 
-// Configuración de Socket.IO
-const socket = io(API_URL, {
-    transports: ['websocket', 'polling'],
-    secure: true, // Importante para HTTPS
-    rejectUnauthorized: false // Aceptar certificados auto-firmados en desarrollo
-});
+// Configuración de Socket.IO con manejo de errores
+let socket = null;
+try {
+    if (typeof io !== 'undefined') {
+        socket = io(API_URL, {
+            transports: ['websocket', 'polling'],
+            secure: true, 
+            rejectUnauthorized: false
+        });
+        console.log("✅ Socket.IO inicializado.");
+    } else {
+        console.warn("⚠️ Socket.IO no está cargado. Modo Offline limitado.");
+        // Mock socket para evitar crashes
+        socket = { emit: () => {}, on: () => {} };
+    }
+} catch (e) {
+    console.error("❌ Error iniciando Socket:", e);
+    socket = { emit: () => {}, on: () => {} };
+}
 
 // === UI DASHBOARD CONTROLLER ===
 const aiResponseEl = document.getElementById('ai-response');
@@ -27,6 +48,54 @@ const statusText = document.getElementById('status-text');
 const textInput = document.getElementById('text-input');
 const sendBtn = document.getElementById('send-btn');
 const micBtn = document.getElementById('mic-btn');
+
+// === BOTONES DE UI ===
+const btnSettings = document.getElementById('settings-btn');
+if(btnSettings) {
+    btnSettings.addEventListener('click', () => {
+         togglePanel('settings-panel');
+         speak("Abriendo configuración.");
+    });
+}
+
+const btnKnowledge = document.getElementById('knowledge-btn');
+if(btnKnowledge) {
+    btnKnowledge.addEventListener('click', () => {
+         togglePanel('knowledge-panel');
+         speak("Accediendo a archivos.");
+    });
+}
+
+const btnPower = document.getElementById('power-btn');
+if(btnPower) {
+    btnPower.addEventListener('click', () => {
+         speak("Apagando sistemas.");
+         setTimeout(() => {
+             if(navigator.app && navigator.app.exitApp) {
+                 navigator.app.exitApp();
+             } else {
+                 window.close();
+             }
+         }, 1000);
+    });
+}
+
+// === BOTONES DE ACCIÓN ===
+const btnVision = document.getElementById('vision-btn');
+if(btnVision) {
+    btnVision.addEventListener('click', () => {
+         togglePanel('vision-panel');
+         speak("Activando visión.");
+    });
+}
+
+const btnHardware = document.getElementById('hardware-btn');
+if(btnHardware) {
+    btnHardware.addEventListener('click', () => {
+         togglePanel('hardware-panel');
+         speak("Sistemas de hardware.");
+    });
+}
 
 // Función para enviar comandos
 function sendCommand(text) {
@@ -605,9 +674,9 @@ function retrieveContext(query) {
 }
 
 // === MÓDULO DE VISIÓN (OJOS DEL ROBOT) ===
-let videoStream = null;
-let faceMatcher = null;
-let isFaceModelLoaded = false;
+// let videoStream = null; // MOVIDO AL INICIO
+// let faceMatcher = null; // MOVIDO AL INICIO
+// let isFaceModelLoaded = false; // MOVIDO AL INICIO
 
 async function detectFacesLoop() {
     const video = document.getElementById('camera-feed');
