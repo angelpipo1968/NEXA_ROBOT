@@ -11,13 +11,22 @@
 </head> 
 <body> 
   <div id="neural-canvas"></div> 
-  <div id="logo-3d"></div> 
-   
-  <div id="content-3d"> 
-    <div id="header-container">
-        <div id="logo-header"></div>
-        <div id="title-3d" class="glitch-3d">NEURONEX PULSE</div> 
-    </div>
+  <div id="ui-container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo-area">
+                <div id="logo-3d"></div>
+                <div>
+                    <h1 id="title-3d">NEURONEX PULSO</h1>
+                    <div class="status-badge">ONLINE <span class="blink">●</span></div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <span id="lang-code">EN</span>
+                <button id="settings-btn" class="icon-btn">⚙️</button>
+                <button id="login-btn" class="icon-btn" onclick="togglePanel('login-panel')">👤</button>
+            </div>
+        </header>
     
     <div id="qwen-3d" class="insight-3d">Conectando...</div> 
     
@@ -61,8 +70,31 @@
         <div id="rag-status" style="font-size: 10px; margin-top: 5px; color: #00f3ff;"></div>
     </div>
 
+        <!-- PANELES FLOTANTES -->
+        <div id="login-panel" class="panel panel-hidden">
+            <div class="panel-header">
+                <h3>ACCESO DE USUARIO</h3>
+                <button class="close-btn" onclick="togglePanel('login-panel')">×</button>
+            </div>
+            <div class="panel-content">
+                <div id="auth-forms">
+                    <input type="email" id="email" placeholder="Email" class="cfg-input">
+                    <input type="password" id="password" placeholder="Contraseña" class="cfg-input">
+                    <button class="hw-btn" onclick="login()">Iniciar Sesión</button>
+                    <button class="hw-btn secondary" onclick="register()">Registrarse</button>
+                </div>
+                <div id="user-profile" style="display:none;">
+                    <p>Bienvenido, <span id="user-email"></span></p>
+                    <p>Plan: <span id="user-plan" style="color: gold;">Free</span></p>
+                    <button class="hw-btn" onclick="upgradePro()" id="upgrade-btn">💎 Mejorar a PRO ($20)</button>
+                    <button class="hw-btn secondary" onclick="logout()">Cerrar Sesión</button>
+                </div>
+                <p id="auth-status" class="status-text"></p>
+            </div>
+        </div>
+
     <!-- Panel de Configuración -->
-    <div id="settings-panel" class="panel-hidden">
+    <div id="settings-panel" class="panel panel-hidden">
         <h3>CONFIGURACIÓN</h3>
         <label>URL Servidor IA (Ollama):</label>
         <input type="text" id="cfg-ai-url" placeholder="http://192.168.1.X:11434/v1/chat/completions">
@@ -98,7 +130,11 @@
  
   <div id="footer">NEXA Ai.Dev • http://nexa-ai.dev  • Multilingual 3D Core • Idioma: <span id="lang-code">es</span></div> 
  
-  <script src="joystick.js"></script>
-  <script src="core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="virtual-joystick.js"></script>
+    <script src="config.js"></script>
+    <script src="core.js"></script>
 </body> 
 </html>
