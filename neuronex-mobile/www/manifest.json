@@ -1,0 +1,10 @@
+{
+  "version": "2.1.0",
+  "last_update": "2026-01-09T01:43:32.610550Z",
+  "domain": "http://nexa-ai.dev/neuronex",
+  "files": {
+    "core.js": "sha256:b910cb281f980af907f6e491ce2c51c41bad04bbb2e827f846a3a82d5bcfa548",
+    "index.html": "sha256:b2b70b86818773f56d069e665eb9e2f1956d09245d7ccc0752c8c002fb273da2",
+    "styles.css": "sha256:2653b6f04c1f14f2a051fa30a1112e5e226d67c33c8dfc56dd891926a984cda3"
+  }
+}

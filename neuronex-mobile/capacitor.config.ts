@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Neuronex Pulse',
   webDir: 'www',
   server: {
-    url: 'http://nexa-ai.dev/neuronex',
+    androidScheme: 'https',
     cleartext: true
   }
 };

@@ -652,6 +652,42 @@ async function sendHardwareCommand(cmd) {
     saveMemory();
 }
 
+// === CONTROL DE JOYSTICK ===
+let lastMoveCmd = '';
+let moveInterval = null;
+
+function initJoystickControl() {
+    const joystick = new VirtualJoystick('joystick-zone', {
+        color: '#00f3ff',
+        size: 150,
+        onMove: (pos) => handleJoystickMove(pos),
+        onEnd: () => sendHardwareCommand('stop')
+    });
+}
+
+function handleJoystickMove(pos) {
+    // Convertir coordenadas X/Y a comandos direccionales simples
+    // Threshold de 0.3 para evitar movimientos accidentales
+    let cmd = '';
+    
+    if (pos.y > 0.5) cmd = 'move_forward';
+    else if (pos.y < -0.5) cmd = 'move_back';
+    else if (pos.x > 0.5) cmd = 'move_right';
+    else if (pos.x < -0.5) cmd = 'move_left';
+    
+    // Solo enviar si cambia el comando y no es vacío
+    if (cmd && cmd !== lastMoveCmd) {
+        lastMoveCmd = cmd;
+        sendHardwareCommand(cmd);
+        
+        // Repetir comando mientras se mantenga (para asegurar movimiento fluido en algunos hardwares)
+        if (moveInterval) clearInterval(moveInterval);
+        moveInterval = setInterval(() => {
+            if (lastMoveCmd === cmd) sendHardwareCommand(cmd);
+        }, 500);
+    }
+}
+
 // === INICIO === 
 window.addEventListener('load', () => { 
   loadMemory(); 
@@ -660,6 +696,7 @@ window.addEventListener('load', () => {
   initNeuralField(); 
   initVoiceInterface(); 
   loadFaceModels(); // Cargar modelos de FaceID
+  initJoystickControl(); // Iniciar Joystick
   
   if (chatHistory.length <= 1) {
       const greeting = `${getTimeBasedGreeting()}, ${userName}. Sistemas listos.`;
