@@ -52,12 +52,28 @@ function processLocalCommand(text) {
         return true;
     }
     if (cmd.includes('abrir youtube')) {
-        window.location.href = "vnd.youtube://"; // Intent Android
+        window.location.href = "vnd.youtube://"; 
+        return true;
+    }
+    if (cmd.includes('abrir spotify')) {
+        window.location.href = "spotify://"; 
+        return true;
+    }
+    if (cmd.includes('abrir maps') || cmd.includes('abrir mapa')) {
+        window.location.href = "geo:0,0?q="; 
         return true;
     }
     if (cmd.includes('abrir cámara') || cmd.includes('abrir camara')) {
-        // Usar input file nativo si es web, o plugin si es nativo
-        document.getElementById('camera-input')?.click(); 
+        // Intentar abrir cámara nativa
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.click();
+        return true;
+    }
+    if (cmd.includes('abrir chrome') || cmd.includes('navegador')) {
+        window.location.href = "googlechrome://"; 
         return true;
     }
     return false;
@@ -92,10 +108,26 @@ socket.on('disconnect', () => {
 
 socket.on('nexa_response', (data) => {
     console.log("🤖 NEXA:", data.text);
+    
+    // Detectar JSON oculto
+    let displayText = data.text;
+    if (data.text.includes('<JSON>')) {
+        const parts = data.text.split('<JSON>');
+        displayText = parts[0];
+        const jsonCmd = parts[1].split('</JSON>')[0];
+        try {
+            const cmdObj = JSON.parse(jsonCmd);
+            if (cmdObj.cmd === 'open_app') {
+                processLocalCommand('abrir ' + cmdObj.app);
+            }
+        } catch (e) {
+            console.error("Error parsing AI command", e);
+        }
+    }
+
     if(aiResponseEl) {
-        aiResponseEl.innerText = data.text;
-        // Leer en voz alta (TTS)
-        speak(data.text);
+        aiResponseEl.innerText = displayText;
+        speak(displayText);
     }
 });
 

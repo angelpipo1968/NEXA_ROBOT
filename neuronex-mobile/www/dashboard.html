@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXA OS | COMMAND CENTER</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Capacitor Core -->
+    <script src="capacitor.js"></script> 
+</head>
+<body>
+
+    <div class="hud-container">
+        <!-- Header: Status & Connection -->
+        <header class="hud-header">
+            <div class="logo">NEXA <span class="version">V2.0</span></div>
+            <div class="status-indicator">
+                <span class="dot online" id="status-dot"></span>
+                <span id="status-text">SYSTEM READY</span>
+            </div>
+        </header>
+
+        <!-- Main Visualizer (The "Eye") -->
+        <div class="visualizer-container">
+            <div class="arc-reactor">
+                <div class="core-circle"></div>
+                <div class="ring-1"></div>
+                <div class="ring-2"></div>
+            </div>
+            <div class="ai-message" id="ai-response">
+                "Esperando órdenes, Comandante."
+            </div>
+        </div>
+
+        <!-- Quick Actions Grid -->
+        <div class="actions-grid">
+            <button class="hud-btn" onclick="sendCommand('Abrir WhatsApp')">
+                <i class="icon">💬</i> WhatsApp
+            </button>
+            <button class="hud-btn" onclick="sendCommand('Abrir YouTube')">
+                <i class="icon">📺</i> YouTube
+            </button>
+            <button class="hud-btn" onclick="sendCommand('Abrir Cámara')">
+                <i class="icon">📸</i> Cámara
+            </button>
+            <button class="hud-btn" onclick="sendCommand('Escanear Entorno')">
+                <i class="icon">👁️</i> Vision
+            </button>
+        </div>
+
+        <!-- Voice Input Area -->
+        <div class="input-area">
+            <button id="mic-btn" class="mic-button">
+                🎙️
+            </button>
+            <input type="text" id="text-input" placeholder="Escribe un comando...">
+            <button id="send-btn" class="send-button">🚀</button>
+        </div>
+    </div>
+
+    <script src="core.js"></script>
+</body>
+</html>
