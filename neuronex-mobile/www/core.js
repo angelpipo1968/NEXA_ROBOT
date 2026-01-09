@@ -131,12 +131,44 @@ socket.on('nexa_response', (data) => {
     }
 });
 
-// TTS Simple
+// TTS Simple y Robusto
+let voices = [];
+window.speechSynthesis.onvoiceschanged = () => {
+    voices = window.speechSynthesis.getVoices();
+    console.log("🗣️ Voces cargadas:", voices.length);
+};
+
 function speak(text) {
+    if (!text) return;
+    
+    // Cancelar cualquier audio anterior para no solaparse
+    window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Intentar encontrar una voz en español
+    const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+    if (spanishVoice) {
+        utterance.voice = spanishVoice;
+    }
+    
     utterance.lang = 'es-ES';
+    utterance.rate = 1.0; // Velocidad normal
+    utterance.pitch = 1.0; // Tono normal
+    
+    // Manejo de errores
+    utterance.onerror = (e) => console.error("Error TTS:", e);
+    
     window.speechSynthesis.speak(utterance);
 }
+
+// Activar audio con la primera interacción
+document.body.addEventListener('click', () => {
+    // Reproducir silencio breve para desbloquear audio en móviles
+    if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+    }
+}, { once: true });
 
 // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
 const TEXTS = { 
