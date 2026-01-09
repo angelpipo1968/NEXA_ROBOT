@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nexa-os-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 NEXA_OS.server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: MONGO_URI
+        sync: false

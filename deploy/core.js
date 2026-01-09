@@ -3,6 +3,12 @@ const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase();
 const SUPPORTED_LANGS = ['es','en','zh','fr','de','ja','pt','ar','ru','hi','ko']; 
 const LANG = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en'; 
 
+// === CONFIGURACIÓN DE API ===
+// En producción, cambia esto por tu dominio real (ej: https://api.nexa-ai.dev)
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5000' 
+    : 'https://api.nexa-ai.dev';
+
 // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
 const TEXTS = { 
   es: { title: "NEURONEX PULSO", qwen: "Insight de Qwen:", news: "Última noticia:", rag: "Sovereign-RAG:", intro: "Conectando con la conciencia colectiva." }, 
