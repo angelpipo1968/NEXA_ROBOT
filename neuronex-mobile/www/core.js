@@ -3,6 +3,12 @@ const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase();
 const SUPPORTED_LANGS = ['es','en','zh','fr','de','ja','pt','ar','ru','hi','ko']; 
 const LANG = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en'; 
 
+// === CONFIGURACIÓN DE API ===
+// En producción, cambia esto por tu dominio real (ej: https://api.nexa-ai.dev)
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5000' 
+    : 'https://api.nexa-ai.dev';
+
 // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
 const TEXTS = { 
   es: { title: "NEURONEX PULSO", qwen: "Insight de Qwen:", news: "Última noticia:", rag: "Sovereign-RAG:", intro: "Conectando con la conciencia colectiva." }, 
@@ -742,6 +748,142 @@ function updateSensorUI(distance) {
         barEl.style.background = '#00ff00'; // VERDE
         window.obstacleDetected = false;
     }
+}
+
+async function uploadDocument() {
+    const fileInput = document.getElementById('docUpload');
+    const status = document.getElementById('uploadStatus');
+    
+    if (fileInput.files.length === 0) {
+        status.innerText = "❌ Selecciona un archivo primero.";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    status.innerText = "⏳ Subiendo...";
+    
+    try {
+        const token = localStorage.getItem('nexa_token');
+        const headers = {};
+        if (token) headers['Authorization'] = token;
+
+        const response = await fetch(`${API_URL}/upload_knowledge`, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if (response.ok) {
+            status.innerText = "✅ Documento aprendido.";
+            fileInput.value = "";
+        } else {
+            const errData = await response.json();
+            status.innerText = "❌ " + (errData.error || "Error al subir.");
+        }
+    } catch (error) {
+        status.innerText = "❌ Error de conexión.";
+        console.error(error);
+    }
+}
+
+// === SISTEMA DE AUTENTICACIÓN Y PAGOS ===
+async function register() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const status = document.getElementById('auth-status');
+    
+    if (!email || !password) { status.innerText = "Faltan datos"; return; }
+    
+    status.innerText = "Registrando...";
+    try {
+        const res = await fetch(`${API_URL}/api/register`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+        if (res.ok) {
+            status.innerText = "✅ Registrado. Inicia sesión.";
+        } else {
+            status.innerText = "❌ " + data.error;
+        }
+    } catch (e) { status.innerText = "❌ Error red"; }
+}
+
+async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const status = document.getElementById('auth-status');
+    
+    status.innerText = "Entrando...";
+    try {
+        const res = await fetch(`${API_URL}/api/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+        if (res.ok) {
+            localStorage.setItem('nexa_token', data.token);
+            localStorage.setItem('nexa_email', email);
+            localStorage.setItem('nexa_plan', data.plan);
+            updateAuthUI();
+            status.innerText = "";
+        } else {
+            status.innerText = "❌ " + data.error;
+        }
+    } catch (e) { status.innerText = "❌ Error red"; }
+}
+
+function logout() {
+    localStorage.removeItem('nexa_token');
+    localStorage.removeItem('nexa_email');
+    localStorage.removeItem('nexa_plan');
+    updateAuthUI();
+}
+
+function updateAuthUI() {
+    const token = localStorage.getItem('nexa_token');
+    const email = localStorage.getItem('nexa_email');
+    const plan = localStorage.getItem('nexa_plan');
+    
+    if (token) {
+        document.getElementById('auth-forms').style.display = 'none';
+        document.getElementById('user-profile').style.display = 'block';
+        document.getElementById('user-email').innerText = email;
+        document.getElementById('user-plan').innerText = plan.toUpperCase();
+        
+        if (plan === 'pro') {
+            document.getElementById('upgrade-btn').style.display = 'none';
+        } else {
+            document.getElementById('upgrade-btn').style.display = 'inline-block';
+        }
+    } else {
+        document.getElementById('auth-forms').style.display = 'block';
+        document.getElementById('user-profile').style.display = 'none';
+    }
+}
+
+async function upgradePro() {
+    // Inicializar Stripe con tu clave pública
+    // ⚠️ REEMPLAZA CON TU CLAVE PÚBLICA DE STRIPE
+    const stripe = Stripe('pk_test_51P...'); 
+    const status = document.getElementById('auth-status');
+    status.innerText = "Iniciando pago...";
+    
+    try {
+        const res = await fetch(`${API_URL}/api/create-checkout-session`, {
+            method: 'POST',
+        });
+        const data = await res.json();
+        if (data.id) {
+            stripe.redirectToCheckout({ sessionId: data.id });
+        } else {
+            status.innerText = "❌ Error iniciando pago";
+        }
+    } catch (e) { status.innerText = "❌ Error red"; }
 }
 
 // === INICIO === 

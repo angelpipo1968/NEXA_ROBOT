@@ -127,8 +127,9 @@ window.addEventListener('resize', () => {
 
 // === CONFIGURACIÓN DE INTELIGENCIA (TOKENS ILIMITADOS) ===
 const AI_CONFIG = {
-  // Se carga desde localStorage o usa default
-  LOCAL_LLM_URL: localStorage.getItem('cfg_ai_url') || 'http://localhost:11434/v1/chat/completions', 
+  // Se carga desde localStorage o usa el PROXY DEL BACKEND (Nube/Local)
+  // YA NO usa Ollama directo porque falla en móvil/web
+  LOCAL_LLM_URL: localStorage.getItem('cfg_ai_url') || `${API_URL}/api/chat`, 
   MODEL_NAME: 'qwen2.5-7b-instruct',
   VISION_MODEL: 'llava', // Modelo multimodal para visión
   SYSTEM_PROMPT: `Eres ${localStorage.getItem('cfg_robot_name') || 'NEXA'}, una IA robótica avanzada.
@@ -552,19 +553,13 @@ async function analyzeFrame() {
     // overlay.textContent = "🧠 Procesando imagen..."; // Comentado para no interferir con FaceID
     
     try {
-        const response = await fetch(AI_CONFIG.LOCAL_LLM_URL, {
+        // Usar endpoint de visión del backend (Gemini Proxy)
+        const response = await fetch(`${API_URL}/api/vision`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: AI_CONFIG.VISION_MODEL,
-                messages: [
-                    {
-                        role: "user",
-                        content: "Describe brevemente qué ves en esta imagen. Sé conciso y técnico, como un robot.",
-                        images: [imageBase64]
-                    }
-                ],
-                stream: false
+                image: imageBase64,
+                prompt: "Describe brevemente qué ves en esta imagen. Sé conciso y técnico, como un robot."
             })
         });
 
@@ -574,7 +569,7 @@ async function analyzeFrame() {
         const description = data.choices[0].message.content;
         
         // overlay.textContent = `👁️ ${description}`;
-        console.log(`[VISIÓN LLaVA] ${description}`);
+        console.log(`[VISIÓN CLOUD] ${description}`);
         
         // Guardar en memoria
         chatHistory.push({ role: "system", content: `[VISIÓN] Veo: ${description}` });

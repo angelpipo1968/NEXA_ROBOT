@@ -20,3 +20,4 @@ python-gnupg
 flask-cors
 stripe
 pyjwt
+pyopenssl

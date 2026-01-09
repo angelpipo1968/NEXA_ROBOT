@@ -60,4 +60,4 @@ if (Test-Path $apkSource) {
 }
 
 Set-Location $PSScriptRoot
-Pause
+# Pause

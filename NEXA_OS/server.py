@@ -12,12 +12,26 @@ import webbrowser
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from nexa_agente.rag import rag_system
+from nexa_agente.brain import ask_brain
+import google.generativeai as genai
 
 # Configuración del servidor
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app) # Permitir CORS para la app móvil
 app.config['SECRET_KEY'] = 'nexa_secret_os_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# --- CONFIGURACIÓN DE IA (GEMINI) ---
+# Se carga desde config.json o variables de entorno
+def load_config():
+    config_path = os.path.join(BASE_DIR, "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f: return json.load(f)
+    return {}
+
+CONFIG = load_config()
+GEMINI_KEY = os.getenv('GEMINI_API_KEY', CONFIG.get('GEMINI_API_KEY', ''))
+genai.configure(api_key=GEMINI_KEY)
 
 # --- CONFIGURACIÓN DE STRIPE ---
 # ⚠️ REEMPLAZA CON TU CLAVE SECRETA DE STRIPE
@@ -81,6 +95,63 @@ def login():
     }, app.config['SECRET_KEY'], algorithm="HS256")
     
     return jsonify({"token": token, "plan": users[email]['plan']})
+
+# --- PROXY DE INTELIGENCIA ARTIFICIAL (NUBE) ---
+@app.route('/api/chat', methods=['POST'])
+def chat_proxy():
+    """Procesa el chat usando Gemini (Nube) en lugar de Ollama local."""
+    data = request.json
+    messages = data.get('messages', [])
+    
+    if not messages:
+        return jsonify({"error": "No messages provided"}), 400
+        
+    last_msg = messages[-1]['content']
+    
+    # Usar el cerebro central (que ya tiene RAG y Memoria)
+    try:
+        response_text = ask_brain(last_msg)
+        return jsonify({
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": response_text
+                }
+            }]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/vision', methods=['POST'])
+def vision_proxy():
+    """Procesa imágenes con Gemini Vision."""
+    data = request.json
+    image_b64 = data.get('image') # Base64 string
+    prompt = data.get('prompt', 'Describe esta imagen.')
+    
+    if not image_b64:
+        return jsonify({"error": "No image provided"}), 400
+        
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Crear objeto de imagen para Gemini (requiere decodificación o estructura específica)
+        # Simplificación: Asumimos que Gemini SDK acepta partes de imagen
+        # En producción, se debe convertir b64 a bytes o usar PIL
+        
+        response = model.generate_content([prompt, {"mime_type": "image/jpeg", "data": image_b64}])
+        
+        return jsonify({
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": response.text
+                }
+            }]
+        })
+    except Exception as e:
+        print(f"Error Vision: {e}")
+        return jsonify({"choices": [{"message": {"role": "assistant", "content": f"[Error Visual]: {str(e)}"}} ]})
+
 
 # --- PAGOS STRIPE ---
 @app.route('/api/create-checkout-session', methods=['POST'])
@@ -151,10 +222,18 @@ def start_server():
     """Inicia el servidor Flask."""
     print("------------------------------------------")
     print("🚀 NEXA OS - SERVIDOR WEB INICIADO")
-    print("🌐 Entra a: http://localhost:5000")
+    print("🌐 Entra a: https://localhost:5000 (HTTPS Activado)")
     print("------------------------------------------")
-    webbrowser.open("http://localhost:5000") # Abrir automáticamente
-    socketio.run(app, host='0.0.0.0', port=5000)
+    
+    # Abrir navegador automáticamente (ignorando error de certificado SSL local)
+    threading.Timer(1.5, lambda: webbrowser.open("https://localhost:5000")).start()
+    
+    # Iniciar con SSL Adhoc (Certificado temporal) para soportar micrófono/cámara
+    try:
+        socketio.run(app, host='0.0.0.0', port=5000, ssl_context='adhoc')
+    except Exception as e:
+        print(f"⚠️ Error iniciando SSL: {e}. Iniciando en modo HTTP normal.")
+        socketio.run(app, host='0.0.0.0', port=5000)
 
 if __name__ == '__main__':
     start_server()
