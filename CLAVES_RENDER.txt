@@ -1,0 +1,19 @@
+# CÓMO PONER TUS CLAVES EN RENDER
+
+Para que NEXA funcione en la nube, Render necesita saber tus claves secretas.
+
+1.  En el Dashboard de Render, entra a tu servicio (`nexa-server`).
+2.  Haz clic en la pestaña **"Environment"** (a la izquierda).
+3.  Haz clic en **"Add Environment Variable"**.
+4.  Añade estas claves (copia el nombre exacto):
+
+NOMBRE (Key)          | VALOR (Value)
+--------------------- | --------------------------------------------------
+GEMINI_API_KEY        | (Pega tu clave de Gemini aquí)
+STRIPE_SECRET_KEY     | (Pega tu clave de Stripe aquí)
+MONGO_URI             | (Pega tu conexión de MongoDB aquí, si tienes)
+FLASK_ENV             | production
+
+5.  Dale a **"Save Changes"**.
+
+Render reiniciará el servidor automáticamente y ya tendrá cerebro y memoria.
