@@ -47,42 +47,27 @@ function sendCommand(text) {
 async function processLocalCommand(text) {
     const cmd = text.toLowerCase();
     
-    // Función auxiliar para abrir apps
+    // Función auxiliar para abrir apps (LITE MODE - NO NATIVE CHECK)
     const launch = async (scheme, packageName) => {
-        console.log(`🚀 Intentando abrir: ${scheme}`);
-        try {
-            // 1. Intentar Capacitor AppLauncher (Nativo)
-            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppLauncher) {
-                const { AppLauncher } = window.Capacitor.Plugins;
-                // Verificar si puede abrir la url (Android 11+ requiere <queries>)
-                const canOpen = await AppLauncher.canOpenUrl({ url: scheme });
-                if (canOpen.value) {
-                    await AppLauncher.openUrl({ url: scheme });
-                    return true;
-                } else {
-                    console.warn(`⚠️ AppLauncher dice que no puede abrir ${scheme}`);
-                }
-            }
-        } catch (e) {
-            console.error("Error plugin AppLauncher:", e);
+        console.log(`🚀 Abriendo LITE: ${scheme}`);
+        
+        // Simplemente intentamos abrir. Si el WebView lo soporta, bien.
+        // Si no, fallará silenciosamente o preguntará al usuario.
+        
+        // 1. window.open (Intento estándar)
+        const w = window.open(scheme, '_system');
+        
+        // 2. Si window.open devuelve null (bloqueado), intentar location.href
+        if (!w) {
+            window.location.href = scheme;
         }
-
-        // 2. Fallback: window.open con _system (Capacitor/Cordova)
-        try {
-            window.open(scheme, '_system');
-            return true;
-        } catch (e) {
-            console.error("Error window.open:", e);
-        }
-
-        // 3. Fallback final: location.href
-        window.location.href = scheme;
+        
         return true;
     };
 
     if (cmd.includes('abrir whatsapp')) {
-        // Universal Link para WhatsApp
-        return await launch("https://wa.me/", "com.whatsapp");
+        // Intentar Intent nativo primero, luego web
+        return await launch("intent://send?text=#Intent;scheme=whatsapp;package=com.whatsapp;end", "com.whatsapp");
     }
     if (cmd.includes('abrir youtube')) {
         return await launch("vnd.youtube://", "com.google.android.youtube");
@@ -451,54 +436,12 @@ async function fetchLocalAI(userPrompt = null) {
   }
 }
 
-// === VOICE RECOGNITION (STT - NATIVO & WEB) ===
+// === VOICE RECOGNITION (LITE MODE - WEB API ONLY) ===
+// Sin referencias a Capacitor ni Plugins. Solo HTML5 puro.
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (micBtn) {
-    micBtn.addEventListener('click', async () => {
-        // Obtener referencia al plugin en tiempo de ejecución
-        const NativeSpeech = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition) 
-            ? window.Capacitor.Plugins.SpeechRecognition 
-            : null;
-
-        // INTENTO 1: PLUGIN NATIVO (Android/iOS)
-        if (NativeSpeech) {
-            try {
-                // Verificar permisos
-                const perm = await NativeSpeech.checkPermissions();
-                if (perm.speechRecognition !== 'granted') {
-                    await NativeSpeech.requestPermissions();
-                }
-                
-                micBtn.classList.add('listening');
-                if(textInput) textInput.placeholder = "Escuchando (Nativo)...";
-                
-                const { value } = await NativeSpeech.start({
-                    language: "es-ES",
-                    maxResults: 1,
-                    prompt: "Di un comando...",
-                    popup: false
-                });
-                
-                if (value && value.length > 0) {
-                    const transcript = value[0];
-                    console.log("🗣️ Nativo:", transcript);
-                    if(textInput) textInput.value = transcript;
-                    sendCommand(transcript);
-                }
-                
-                micBtn.classList.remove('listening');
-                if(textInput) textInput.placeholder = "Escribe un comando...";
-                return; // Éxito nativo
-                
-            } catch (e) {
-                console.warn("Fallo STT Nativo, probando Web:", e);
-                micBtn.classList.remove('listening');
-                // Continuar a Intento 2
-            }
-        }
-
-        // INTENTO 2: WEB API (Chrome/Desktop)
+    micBtn.addEventListener('click', () => {
         if (SpeechRecognition) {
             try {
                 const recognition = new SpeechRecognition();
@@ -507,7 +450,7 @@ if (micBtn) {
                 
                 recognition.onstart = () => {
                     micBtn.classList.add('listening');
-                    if(textInput) textInput.placeholder = "Escuchando (Web)...";
+                    if(textInput) textInput.placeholder = "Escuchando...";
                 };
                 
                 recognition.onend = () => micBtn.classList.remove('listening');
@@ -518,13 +461,18 @@ if (micBtn) {
                     sendCommand(transcript);
                 };
                 
+                recognition.onerror = (event) => {
+                    console.error("Error STT Web:", event.error);
+                    micBtn.classList.remove('listening');
+                };
+                
                 recognition.start();
             } catch (e) {
-                console.error("Fallo STT Web:", e);
-                alert("No se pudo activar el micrófono.");
+                console.error("Excepción STT Web:", e);
+                alert("Error micrófono web.");
             }
         } else {
-            alert("Tu dispositivo no soporta reconocimiento de voz.");
+            alert("Micrófono no soportado en este navegador.");
         }
     });
 }
