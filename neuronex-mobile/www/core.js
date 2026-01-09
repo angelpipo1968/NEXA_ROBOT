@@ -3,11 +3,22 @@ const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase();
 const SUPPORTED_LANGS = ['es','en','zh','fr','de','ja','pt','ar','ru','hi','ko']; 
 const LANG = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en'; 
 
-// === CONFIGURACIÓN DE API ===
-// En producción, cambia esto por tu dominio real (ej: https://api.nexa-ai.dev)
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5000' 
-    : 'https://api.nexa-ai.dev';
+// core.js - Núcleo de NEXA OS (Versión Móvil/Web)
+console.log("🚀 NEXA OS Core Inicializando...");
+
+// === CONFIGURACIÓN GLOBAL ===
+// URL del Backend (Python/Flask)
+// CAMBIAR ESTO POR TU URL DE RENDER/VERCEL EN PRODUCCIÓN
+const API_URL = 'https://nexa-app.onrender.com'; 
+// const API_URL = 'http://10.0.2.2:5000'; // Para emulador Android (Localhost)
+// const API_URL = 'http://localhost:5000'; // Para pruebas web locales
+
+// Configuración de Socket.IO
+const socket = io(API_URL, {
+    transports: ['websocket', 'polling'],
+    secure: true, // Importante para HTTPS
+    rejectUnauthorized: false // Aceptar certificados auto-firmados en desarrollo
+});
 
 // === TEXTOS MULTILINGÜES (10+1 IDIOMAS) === 
 const TEXTS = { 
@@ -127,8 +138,9 @@ window.addEventListener('resize', () => {
 
 // === CONFIGURACIÓN DE INTELIGENCIA (TOKENS ILIMITADOS) ===
 const AI_CONFIG = {
-  // Se carga desde localStorage o usa default
-  LOCAL_LLM_URL: localStorage.getItem('cfg_ai_url') || 'http://localhost:11434/v1/chat/completions', 
+  // Se carga desde localStorage o usa el PROXY DEL BACKEND (Nube/Local)
+  // YA NO usa Ollama directo porque falla en móvil/web
+  LOCAL_LLM_URL: localStorage.getItem('cfg_ai_url') || `${API_URL}/api/chat`, 
   MODEL_NAME: 'qwen2.5-7b-instruct',
   VISION_MODEL: 'llava', // Modelo multimodal para visión
   SYSTEM_PROMPT: `Eres ${localStorage.getItem('cfg_robot_name') || 'NEXA'}, una IA robótica avanzada.
@@ -552,19 +564,13 @@ async function analyzeFrame() {
     // overlay.textContent = "🧠 Procesando imagen..."; // Comentado para no interferir con FaceID
     
     try {
-        const response = await fetch(AI_CONFIG.LOCAL_LLM_URL, {
+        // Usar endpoint de visión del backend (Gemini Proxy)
+        const response = await fetch(`${API_URL}/api/vision`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: AI_CONFIG.VISION_MODEL,
-                messages: [
-                    {
-                        role: "user",
-                        content: "Describe brevemente qué ves en esta imagen. Sé conciso y técnico, como un robot.",
-                        images: [imageBase64]
-                    }
-                ],
-                stream: false
+                image: imageBase64,
+                prompt: "Describe brevemente qué ves en esta imagen. Sé conciso y técnico, como un robot."
             })
         });
 
@@ -574,7 +580,7 @@ async function analyzeFrame() {
         const description = data.choices[0].message.content;
         
         // overlay.textContent = `👁️ ${description}`;
-        console.log(`[VISIÓN LLaVA] ${description}`);
+        console.log(`[VISIÓN CLOUD] ${description}`);
         
         // Guardar en memoria
         chatHistory.push({ role: "system", content: `[VISIÓN] Veo: ${description}` });
