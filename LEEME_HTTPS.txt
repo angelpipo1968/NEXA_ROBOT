@@ -1,0 +1,17 @@
+# CÓMO ACTIVAR HTTPS REAL (SSL)
+
+Si "Clau" (o tu proveedor de certificados) te ha enviado los archivos para el HTTPS, deben llamarse así:
+
+1.  **cert.pem** (El certificado público)
+2.  **key.pem** (La clave privada)
+
+## Instrucciones:
+1.  Copia esos dos archivos en la carpeta principal de este proyecto (`C:\Users\pipog\NEXA_ROBOT_V2\`).
+2.  Reinicia el servidor (`python NEXA_OS/server.py`).
+
+NEXA detectará automáticamente los archivos y mostrará "🔒 Certificados SSL detectados".
+
+## Si no tienes archivos:
+NEXA usará un certificado "Adhoc" (temporal). 
+- Funciona para pruebas.
+- El navegador te dirá "No es seguro". Debes dar clic en "Avanzado" -> "Continuar de todos modos".

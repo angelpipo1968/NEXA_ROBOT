@@ -222,17 +222,32 @@ def start_server():
     """Inicia el servidor Flask."""
     print("------------------------------------------")
     print("🚀 NEXA OS - SERVIDOR WEB INICIADO")
-    print("🌐 Entra a: https://localhost:5000 (HTTPS Activado)")
+    
+    # Verificar certificados reales
+    cert_file = os.path.join(BASE_DIR, "cert.pem")
+    key_file = os.path.join(BASE_DIR, "key.pem")
+    ssl_context = None
+    
+    if os.path.exists(cert_file) and os.path.exists(key_file):
+        print("🔒 Certificados SSL detectados (cert.pem, key.pem)")
+        ssl_context = (cert_file, key_file)
+        print("🌐 Entra a: https://localhost:5000")
+    else:
+        print("⚠️ No hay certificados reales. Usando modo Adhoc (Auto-firmado).")
+        print("🌐 Entra a: https://localhost:5000 (Acepta la advertencia de seguridad)")
+        ssl_context = 'adhoc'
+
     print("------------------------------------------")
     
-    # Abrir navegador automáticamente (ignorando error de certificado SSL local)
+    # Abrir navegador automáticamente
     threading.Timer(1.5, lambda: webbrowser.open("https://localhost:5000")).start()
     
-    # Iniciar con SSL Adhoc (Certificado temporal) para soportar micrófono/cámara
+    # Iniciar servidor
     try:
-        socketio.run(app, host='0.0.0.0', port=5000, ssl_context='adhoc')
+        socketio.run(app, host='0.0.0.0', port=5000, ssl_context=ssl_context)
     except Exception as e:
-        print(f"⚠️ Error iniciando SSL: {e}. Iniciando en modo HTTP normal.")
+        print(f"⚠️ Error iniciando SSL: {e}. Iniciando en modo HTTP inseguro.")
+        print("🌐 Entra a: http://localhost:5000")
         socketio.run(app, host='0.0.0.0', port=5000)
 
 if __name__ == '__main__':
