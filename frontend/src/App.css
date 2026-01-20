@@ -253,21 +253,32 @@ body {
 }
 
 .voice-toggle {
-  background: none;
-  border: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   color: var(--text-muted);
   cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 20px;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .voice-toggle:hover {
   background: var(--bg-hover);
+  border-color: var(--accent-color);
 }
 
 .voice-toggle.active {
+  background: rgba(97, 92, 237, 0.2);
+  border-color: var(--accent-color);
   color: var(--accent-color);
+}
+
+.voice-label {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* ==================== NEXA LOGO ==================== */
