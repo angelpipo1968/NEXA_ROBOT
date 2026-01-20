@@ -287,8 +287,8 @@ function App() {
       <main className="main-content">
         {/* Header */}
         <header className="main-header">
-          <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(!showSidebar)}>
-            <MenuIcon />
+          <button className="toggle-sidebar-btn" onClick={() => setShowSidebar(!showSidebar)} title={showSidebar ? 'Cerrar sidebar' : 'Abrir sidebar'}>
+            {showSidebar ? <SidebarCloseIcon /> : <SidebarOpenIcon />}
           </button>
           <div className="header-title">
             <NexaLogo size={32} />
