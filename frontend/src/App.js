@@ -72,6 +72,386 @@ const Message = ({ message, onSpeak }) => {
   );
 };
 
+// ==================== SETTINGS COMPONENT ====================
+const SettingsPage = ({ onClose, settings, setSettings }) => {
+  const [activeSection, setActiveSection] = useState('general');
+  
+  const menuItems = [
+    { id: 'general', icon: <SettingsIcon />, label: 'General' },
+    { id: 'interface', icon: <ComputerIcon />, label: 'Interfaz' },
+    { id: 'models', icon: <LayersIcon />, label: 'Modelos' },
+    { id: 'chats', icon: <ChatIcon />, label: 'Chats' },
+    { id: 'personalization', icon: <PaletteIcon />, label: 'Personalizacion' },
+    { id: 'account', icon: <UserIcon />, label: 'Cuenta' },
+    { id: 'about', icon: <InfoIcon />, label: 'Sobre nosotros' },
+  ];
+
+  const voices = [
+    { id: 'default', name: 'Predeterminada' },
+    { id: 'helena', name: 'Helena' },
+    { id: 'laura', name: 'Laura' },
+    { id: 'pablo', name: 'Pablo' },
+  ];
+
+  return (
+    <div className="settings-overlay">
+      <div className="settings-container">
+        <header className="settings-header">
+          <button className="back-btn" onClick={onClose}>
+            <BackIcon />
+          </button>
+          <h1 className="settings-title">Configuracion</h1>
+        </header>
+        
+        <div className="settings-body">
+          <nav className="settings-sidebar">
+            {menuItems.map(item => (
+              <button
+                key={item.id}
+                className={`settings-menu-item ${activeSection === item.id ? 'active' : ''}`}
+                onClick={() => setActiveSection(item.id)}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+          
+          <div className="settings-content">
+            {activeSection === 'general' && (
+              <div className="settings-section">
+                <h2 className="section-title">General</h2>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Tema</label>
+                  <div className="setting-control">
+                    <div className="segmented-control">
+                      <button 
+                        className={`segment ${settings.theme === 'system' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, theme: 'system'})}
+                      >Sistema</button>
+                      <button 
+                        className={`segment ${settings.theme === 'light' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, theme: 'light'})}
+                      >Claro</button>
+                      <button 
+                        className={`segment ${settings.theme === 'dark' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, theme: 'dark'})}
+                      >Oscuro</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Lenguaje</label>
+                  <div className="setting-control">
+                    <select 
+                      className="setting-select"
+                      value={settings.language}
+                      onChange={(e) => setSettings({...settings, language: e.target.value})}
+                    >
+                      <option value="es">Espanol</option>
+                      <option value="en">English</option>
+                      <option value="pt">Portugues</option>
+                      <option value="fr">Francais</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Voz</label>
+                  <div className="setting-control clickable" onClick={() => setActiveSection('voice')}>
+                    <span className="setting-value">{settings.voiceName || 'Predeterminada'}</span>
+                    <ChevronRightIcon />
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Voz automatica</label>
+                  <div className="setting-control">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.autoSpeak}
+                        onChange={(e) => setSettings({...settings, autoSpeak: e.target.checked})}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Velocidad de voz</label>
+                  <div className="setting-control">
+                    <input 
+                      type="range" 
+                      min="0.5" 
+                      max="2" 
+                      step="0.1"
+                      value={settings.speechRate}
+                      onChange={(e) => setSettings({...settings, speechRate: parseFloat(e.target.value)})}
+                      className="setting-range"
+                    />
+                    <span className="range-value">{settings.speechRate}x</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'interface' && (
+              <div className="settings-section">
+                <h2 className="section-title">Interfaz</h2>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Tamano de fuente</label>
+                  <div className="setting-control">
+                    <div className="segmented-control">
+                      <button 
+                        className={`segment ${settings.fontSize === 'small' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, fontSize: 'small'})}
+                      >Pequeno</button>
+                      <button 
+                        className={`segment ${settings.fontSize === 'medium' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, fontSize: 'medium'})}
+                      >Mediano</button>
+                      <button 
+                        className={`segment ${settings.fontSize === 'large' ? 'active' : ''}`}
+                        onClick={() => setSettings({...settings, fontSize: 'large'})}
+                      >Grande</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Mostrar avatares</label>
+                  <div className="setting-control">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.showAvatars}
+                        onChange={(e) => setSettings({...settings, showAvatars: e.target.checked})}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Animaciones</label>
+                  <div className="setting-control">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.animations}
+                        onChange={(e) => setSettings({...settings, animations: e.target.checked})}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'models' && (
+              <div className="settings-section">
+                <h2 className="section-title">Modelos</h2>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Modelo de chat</label>
+                  <div className="setting-control">
+                    <select 
+                      className="setting-select"
+                      value={settings.chatModel}
+                      onChange={(e) => setSettings({...settings, chatModel: e.target.value})}
+                    >
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                      <option value="gpt-3.5">GPT-3.5</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Modelo de imagen</label>
+                  <div className="setting-control">
+                    <select 
+                      className="setting-select"
+                      value={settings.imageModel}
+                      onChange={(e) => setSettings({...settings, imageModel: e.target.value})}
+                    >
+                      <option value="dall-e-3">DALL-E 3</option>
+                      <option value="gpt-image-1">GPT Image</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Creatividad</label>
+                  <div className="setting-control">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="1" 
+                      step="0.1"
+                      value={settings.temperature}
+                      onChange={(e) => setSettings({...settings, temperature: parseFloat(e.target.value)})}
+                      className="setting-range"
+                    />
+                    <span className="range-value">{settings.temperature}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'chats' && (
+              <div className="settings-section">
+                <h2 className="section-title">Chats</h2>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Guardar historial</label>
+                  <div className="setting-control">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.saveHistory}
+                        onChange={(e) => setSettings({...settings, saveHistory: e.target.checked})}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Mensajes de contexto</label>
+                  <div className="setting-control">
+                    <select 
+                      className="setting-select"
+                      value={settings.contextMessages}
+                      onChange={(e) => setSettings({...settings, contextMessages: parseInt(e.target.value)})}
+                    >
+                      <option value="5">5 mensajes</option>
+                      <option value="10">10 mensajes</option>
+                      <option value="20">20 mensajes</option>
+                      <option value="50">50 mensajes</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="setting-item danger">
+                  <label className="setting-label">Borrar todos los chats</label>
+                  <div className="setting-control">
+                    <button className="danger-btn">Borrar todo</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'personalization' && (
+              <div className="settings-section">
+                <h2 className="section-title">Personalizacion</h2>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Nombre del asistente</label>
+                  <div className="setting-control">
+                    <input 
+                      type="text"
+                      className="setting-input"
+                      value={settings.assistantName}
+                      onChange={(e) => setSettings({...settings, assistantName: e.target.value})}
+                      placeholder="NEXA"
+                    />
+                  </div>
+                </div>
+                
+                <div className="setting-item">
+                  <label className="setting-label">Tu nombre</label>
+                  <div className="setting-control">
+                    <input 
+                      type="text"
+                      className="setting-input"
+                      value={settings.userName}
+                      onChange={(e) => setSettings({...settings, userName: e.target.value})}
+                      placeholder="Usuario"
+                    />
+                  </div>
+                </div>
+                
+                <div className="setting-item full-width">
+                  <label className="setting-label">Instrucciones personalizadas</label>
+                  <textarea 
+                    className="setting-textarea"
+                    value={settings.customInstructions}
+                    onChange={(e) => setSettings({...settings, customInstructions: e.target.value})}
+                    placeholder="Describe como quieres que NEXA responda..."
+                    rows={4}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'account' && (
+              <div className="settings-section">
+                <h2 className="section-title">Cuenta</h2>
+                <div className="account-info">
+                  <div className="account-avatar">
+                    <UserIcon />
+                  </div>
+                  <div className="account-details">
+                    <h3>Usuario Local</h3>
+                    <p>Sesion activa</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeSection === 'about' && (
+              <div className="settings-section">
+                <h2 className="section-title">Sobre nosotros</h2>
+                <div className="about-content">
+                  <div className="about-logo">
+                    <NexaLogo size={60} />
+                  </div>
+                  <h3>NEXA AI Assistant</h3>
+                  <p className="version">Version 3.0.0</p>
+                  <p className="description">
+                    NEXA es un asistente de inteligencia artificial avanzado con capacidades de voz, 
+                    generacion de imagenes, creacion de paginas web y mas.
+                  </p>
+                  <div className="about-links">
+                    <a href="#" className="about-link">Terminos de uso</a>
+                    <a href="#" className="about-link">Politica de privacidad</a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'voice' && (
+              <div className="settings-section">
+                <h2 className="section-title">Seleccionar Voz</h2>
+                <div className="voice-list">
+                  {voices.map(voice => (
+                    <button
+                      key={voice.id}
+                      className={`voice-item ${settings.voiceId === voice.id ? 'active' : ''}`}
+                      onClick={() => setSettings({...settings, voiceId: voice.id, voiceName: voice.name})}
+                    >
+                      <span className="voice-name">{voice.name}</span>
+                      {settings.voiceId === voice.id && <span className="check-mark">✓</span>}
+                    </button>
+                  ))}
+                </div>
+                <button className="back-to-general" onClick={() => setActiveSection('general')}>
+                  <BackIcon /> Volver a General
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== MAIN APP ====================
 function App() {
   const [messages, setMessages] = useState([]);
@@ -80,13 +460,33 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [autoSpeak, setAutoSpeak] = useState(true); // Auto hablar activado por defecto
+  const [autoSpeak, setAutoSpeak] = useState(true);
   const [sessionId, setSessionId] = useState('');
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [activeFeature, setActiveFeature] = useState(null);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [recognitionSupported, setRecognitionSupported] = useState(false);
+  const [settings, setSettings] = useState({
+    theme: 'dark',
+    language: 'es',
+    autoSpeak: true,
+    speechRate: 1.0,
+    fontSize: 'medium',
+    showAvatars: true,
+    animations: true,
+    chatModel: 'gpt-4',
+    imageModel: 'gpt-image-1',
+    temperature: 0.7,
+    saveHistory: true,
+    contextMessages: 10,
+    assistantName: 'NEXA',
+    userName: '',
+    customInstructions: '',
+    voiceId: 'default',
+    voiceName: 'Predeterminada'
+  });
   
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
