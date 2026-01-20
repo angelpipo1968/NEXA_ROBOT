@@ -734,12 +734,21 @@ function App() {
         </div>
         
         <div className="sidebar-footer">
-          <button className="settings-btn">
+          <button className="settings-btn" onClick={() => setShowSettings(true)}>
             <SettingsIcon />
             <span>Configuracion</span>
           </button>
         </div>
       </aside>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsPage 
+          onClose={() => setShowSettings(false)} 
+          settings={settings}
+          setSettings={setSettings}
+        />
+      )}
 
       {/* Main Content */}
       <main className="main-content">
