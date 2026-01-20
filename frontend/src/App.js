@@ -72,6 +72,7 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState(true); // Auto hablar activado por defecto
   const [sessionId, setSessionId] = useState('');
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
