@@ -329,9 +329,9 @@ function App() {
       selectedVoice = voices.find(v => v.lang.includes('es'));
     }
     
-    // ALWAYS use high pitch for feminine voice
-    utterance.pitch = 1.8;  // High pitch for female voice
-    utterance.rate = 0.9;   // Slightly slower for natural sound
+    // Original voice settings
+    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
