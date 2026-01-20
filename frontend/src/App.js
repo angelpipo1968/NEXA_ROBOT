@@ -142,19 +142,62 @@ function App() {
   const deleteSession = async (sid, e) => { e.stopPropagation(); try { await axios.delete(`${API}/sessions/${sid}`); if (sid === sessionId) await createNewSession(); await loadSessions(); } catch (error) { console.error('Error:', error); } };
 
   const speak = useCallback((text) => {
-    if (!speechSupported || !voiceEnabled) return;
-    synthRef.current.cancel();
-    const cleanText = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/_/g, '').replace(/`/g, '').replace(/#{1,6}\s/g, '').replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[\u{2600}-\u{26FF}]/gu, '').replace(/[\u{2700}-\u{27BF}]/gu, '').replace(/[\u{1F600}-\u{1F64F}]/gu, '').replace(/[\u{1F680}-\u{1F6FF}]/gu, '').replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '').replace(/\s+/g, ' ').trim();
+    if (!speechSupported) {
+      console.log('Speech not supported');
+      return;
+    }
+    
+    // Cancel any ongoing speech
+    if (synthRef.current) {
+      synthRef.current.cancel();
+    }
+    
+    // Clean text - remove markdown and emojis
+    const cleanText = text
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/_/g, '')
+      .replace(/`/g, '')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')
+      .replace(/[\u{2700}-\u{27BF}]/gu, '')
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (!cleanText) return;
+    
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'es-ES'; utterance.pitch = 1.0; utterance.rate = 1.0;
+    utterance.lang = 'es-ES';
+    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
+    utterance.volume = 1.0;
+    
+    // Get voices and select Spanish
     const voices = synthRef.current.getVoices();
     const spanishVoice = voices.find(v => v.lang.includes('es'));
-    if (spanishVoice) utterance.voice = spanishVoice;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    if (spanishVoice) {
+      utterance.voice = spanishVoice;
+    }
+    
+    utterance.onstart = () => {
+      console.log('Speaking started');
+      setIsSpeaking(true);
+    };
+    utterance.onend = () => {
+      console.log('Speaking ended');
+      setIsSpeaking(false);
+    };
+    utterance.onerror = (e) => {
+      console.error('Speech error:', e);
+      setIsSpeaking(false);
+    };
+    
     synthRef.current.speak(utterance);
-  }, [speechSupported, voiceEnabled]);
+  }, [speechSupported]);
 
   const toggleListening = () => {
     if (!recognitionSupported) { alert('Reconocimiento de voz no soportado.'); return; }
