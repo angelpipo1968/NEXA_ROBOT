@@ -302,8 +302,13 @@ function App() {
             <span>NEXA</span>
           </div>
           <div className="header-actions">
-            <button className={`voice-toggle ${voiceEnabled ? 'active' : ''}`} onClick={() => setVoiceEnabled(!voiceEnabled)}>
-              <SpeakerIcon muted={!voiceEnabled} />
+            <button 
+              className={`voice-toggle ${autoSpeak ? 'active' : ''}`} 
+              onClick={() => setAutoSpeak(!autoSpeak)}
+              title={autoSpeak ? 'Desactivar voz automatica' : 'Activar voz automatica'}
+            >
+              <SpeakerIcon muted={!autoSpeak} />
+              <span className="voice-label">{autoSpeak ? 'Voz ON' : 'Voz OFF'}</span>
             </button>
           </div>
         </header>
