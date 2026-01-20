@@ -275,19 +275,26 @@ function App() {
     // Cancel any ongoing speech
     synthRef.current.cancel();
     
-    // Clean text: remove asterisks and markdown formatting
+    // Clean text: remove asterisks, markdown formatting and emojis
     const cleanText = text
       .replace(/\*\*/g, '')  // Remove double asterisks
       .replace(/\*/g, '')    // Remove single asterisks
       .replace(/_/g, '')     // Remove underscores
       .replace(/`/g, '')     // Remove backticks
       .replace(/#{1,6}\s/g, '') // Remove markdown headers
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Remove misc symbols
+      .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Remove dingbats
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Remove emoticons
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Remove transport symbols
+      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Remove flags
+      .replace(/\s+/g, ' ')  // Clean multiple spaces
       .trim();
     
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
     utterance.rate = 1.0;
-    utterance.pitch = 1.1;  // Slightly higher pitch for feminine voice
+    utterance.pitch = 1.0;  // Natural pitch
     
     // Try to find a Spanish FEMALE voice
     const voices = synthRef.current.getVoices();
