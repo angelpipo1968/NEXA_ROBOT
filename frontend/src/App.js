@@ -329,15 +329,13 @@ function App() {
       selectedVoice = voices.find(v => v.lang.includes('es'));
     }
     
+    // ALWAYS use high pitch for feminine voice
+    utterance.pitch = 1.8;  // High pitch for female voice
+    utterance.rate = 0.9;   // Slightly slower for natural sound
+    
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       console.log('Selected voice:', selectedVoice.name);
-      // If it's not a confirmed female voice, raise pitch
-      const isFemale = femaleNames.some(fn => selectedVoice.name.toLowerCase().includes(fn));
-      utterance.pitch = isFemale ? 1.0 : 1.4;  // Higher pitch for feminine sound
-    } else {
-      // No Spanish voice found, use high pitch for feminine sound
-      utterance.pitch = 1.4;
     }
     
     utterance.onstart = () => setIsSpeaking(true);
