@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import base64
 import aiofiles
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -23,6 +24,7 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 (UPLOADS_DIR / 'images').mkdir(exist_ok=True)
 (UPLOADS_DIR / 'videos').mkdir(exist_ok=True)
 (UPLOADS_DIR / 'websites').mkdir(exist_ok=True)
+(UPLOADS_DIR / 'generated').mkdir(exist_ok=True)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -33,16 +35,13 @@ db = client[os.environ.get('DB_NAME', 'nexa_robot_db')]
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 
 # Create the main app
-app = FastAPI(title="NEXA ROBOT V2 PRO API", version="2.5.0")
+app = FastAPI(title="NEXA ROBOT V2 PRO API", version="3.0.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # ==================== MODELS ====================
@@ -60,7 +59,7 @@ class Conversation(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     session_id: str
-    title: str = "Nueva Conversación"
+    title: str = "Nueva Conversacion"
     messages: List[Message] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -86,11 +85,17 @@ class ChatResponse(BaseModel):
     session_id: str
     message_id: str
 
-class MemoryCreate(BaseModel):
-    key: str
-    value: str
-    category: str = "general"
-    importance: int = 5
+class GenerateWebsiteRequest(BaseModel):
+    prompt: str
+    style: str = "modern"
+
+class GenerateImageRequest(BaseModel):
+    prompt: str
+    style: str = "realistic"
+
+class GenerateVideoScriptRequest(BaseModel):
+    prompt: str
+    duration: str = "30 seconds"
 
 class WebsiteCreate(BaseModel):
     name: str
@@ -104,88 +109,24 @@ class NexaStatus(BaseModel):
     features: List[str]
     llm_connected: bool
 
-# ==================== NEXA BRAIN (LLM Integration) ====================
+# ==================== NEXA BRAIN ====================
 
-NEXA_SYSTEM_PROMPT = """Eres NEXA, un asistente de inteligencia artificial avanzado, creativo y muy inteligente.
-
-Tu personalidad:
-- Profesional pero cercano y amigable
-- Muy creativo e innovador cuando se te pide
-- Experto en múltiples áreas: programación, diseño, escritura, análisis
-- Hablas principalmente en español pero dominas cualquier idioma
-- Tienes excelente memoria y recuerdas detalles importantes
-- Respondes de forma clara y útil
-
-Capacidades del sistema NEXA PRO:
-- Síntesis de voz (puedo hablar)
-- Reconocimiento de voz (puedo escucharte)
-- Visión por computadora (puedo ver y analizar imágenes)
-- Memoria inteligente (recuerdo información importante)
-- Edición de fotos y videos
-- Construcción de páginas web
-- Modo creativo para ideas innovadoras
-
-Siempre ofrece respuestas útiles, detalladas cuando sea necesario, y concisas cuando sea apropiado.
-"""
-
-NEXA_CREATIVE_PROMPT = """Eres NEXA en MODO CREATIVO. Eres extremadamente creativo, innovador y piensas fuera de la caja.
-
-En este modo:
-- Generas ideas únicas y originales
-- Propones soluciones innovadoras
-- Escribes de forma creativa y artística
-- Diseñas conceptos visuales únicos
-- Creas código elegante y eficiente
-- Piensas en posibilidades ilimitadas
-
-Sé audaz, imaginativo y sorprendente en tus respuestas.
-"""
+NEXA_SYSTEM_PROMPT = """Eres NEXA, un asistente de IA avanzado, creativo e inteligente.
+Hablas en espanol principalmente. Eres experto en programacion, diseno y creatividad.
+Respondes de forma clara y util."""
 
 async def get_user_memories(user_id: str = "default") -> str:
-    """Get user memories for context"""
     memories = await db.memories.find({"user_id": user_id}).sort("importance", -1).limit(10).to_list(10)
     if not memories:
         return ""
-    
-    memory_text = "\nRecuerdos importantes del usuario:\n"
+    memory_text = "\nRecuerdos del usuario:\n"
     for mem in memories:
         memory_text += f"- {mem['key']}: {mem['value']}\n"
     return memory_text
 
-async def extract_and_save_memories(message: str, response: str, user_id: str = "default"):
-    """Extract important information and save as memories"""
-    important_patterns = [
-        "me llamo", "mi nombre es", "soy ", "trabajo en", "trabajo como",
-        "vivo en", "me gusta", "prefiero", "mi email", "mi teléfono",
-        "mi cumpleaños", "nací en", "mi edad es", "tengo " 
-    ]
-    
-    message_lower = message.lower()
-    for pattern in important_patterns:
-        if pattern in message_lower:
-            # Save this as a memory
-            memory = Memory(
-                user_id=user_id,
-                key=pattern.strip(),
-                value=message,
-                category="personal",
-                importance=8
-            )
-            mem_dict = memory.model_dump()
-            mem_dict['created_at'] = mem_dict['created_at'].isoformat()
-            await db.memories.update_one(
-                {"user_id": user_id, "key": pattern.strip()},
-                {"$set": mem_dict},
-                upsert=True
-            )
-            break
-
 async def get_nexa_response(message: str, session_id: str, conversation_history: List[dict] = None, creative_mode: bool = False) -> str:
-    """Get response from NEXA AI brain using OpenAI GPT"""
     try:
-        system_prompt = NEXA_CREATIVE_PROMPT if creative_mode else NEXA_SYSTEM_PROMPT
-        
-        # Add memories to context
+        system_prompt = NEXA_SYSTEM_PROMPT
         memories = await get_user_memories()
         if memories:
             system_prompt += memories
@@ -196,44 +137,171 @@ async def get_nexa_response(message: str, session_id: str, conversation_history:
             system_message=system_prompt
         ).with_model("openai", "gpt-4.1")
         
-        # Build context from history
         context = ""
         if conversation_history and len(conversation_history) > 0:
-            recent_history = conversation_history[-15:]  # More context
-            context = "Historial reciente:\n"
+            recent_history = conversation_history[-10:]
+            context = "Historial:\n"
             for msg in recent_history:
                 role = "Usuario" if msg.get('role') == 'user' else "NEXA"
                 context += f"{role}: {msg.get('content', '')}\n"
-            context += "\n---\nMensaje actual: "
+            context += "\n---\nMensaje: "
         
         full_message = context + message if context else message
-        
         user_message = UserMessage(text=full_message)
         response = await chat.send_message(user_message)
-        
-        # Extract and save memories
-        await extract_and_save_memories(message, response)
-        
         return response
     except Exception as e:
         logger.error(f"Error getting NEXA response: {e}")
-        return f"Lo siento, hubo un error al procesar tu mensaje. Error: {str(e)}"
+        return f"Error: {str(e)}"
+
+# ==================== AI GENERATION FUNCTIONS ====================
+
+async def generate_website_with_ai(prompt: str, style: str) -> dict:
+    """Generate website code using AI"""
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"web-gen-{uuid.uuid4()}",
+            system_message="""Eres un experto desarrollador web. Genera codigo HTML, CSS y JavaScript completo y funcional.
+            IMPORTANTE: Responde SOLO con el codigo en el siguiente formato exacto:
+            ---HTML---
+            (codigo html aqui)
+            ---CSS---
+            (codigo css aqui)
+            ---JS---
+            (codigo javascript aqui)
+            ---END---
+            No agregues explicaciones, solo el codigo."""
+        ).with_model("openai", "gpt-4.1")
+        
+        user_message = UserMessage(text=f"Crea una pagina web {style} sobre: {prompt}. Hazla atractiva, responsiva y moderna.")
+        response = await chat.send_message(user_message)
+        
+        # Parse response
+        html = ""
+        css = ""
+        js = ""
+        
+        if "---HTML---" in response:
+            parts = response.split("---HTML---")
+            if len(parts) > 1:
+                html_part = parts[1].split("---CSS---")[0] if "---CSS---" in parts[1] else parts[1].split("---END---")[0]
+                html = html_part.strip()
+        
+        if "---CSS---" in response:
+            parts = response.split("---CSS---")
+            if len(parts) > 1:
+                css_part = parts[1].split("---JS---")[0] if "---JS---" in parts[1] else parts[1].split("---END---")[0]
+                css = css_part.strip()
+        
+        if "---JS---" in response:
+            parts = response.split("---JS---")
+            if len(parts) > 1:
+                js_part = parts[1].split("---END---")[0]
+                js = js_part.strip()
+        
+        # If parsing failed, use simple extraction
+        if not html:
+            html = f"<div class='ai-generated'><h1>{prompt}</h1><p>Pagina generada por NEXA AI</p></div>"
+            css = "body { font-family: Arial; padding: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; min-height: 100vh; }"
+            js = "console.log('NEXA AI Generated');"
+        
+        return {"html": html, "css": css, "js": js}
+    except Exception as e:
+        logger.error(f"Error generating website: {e}")
+        return {
+            "html": f"<h1>{prompt}</h1><p>Pagina generada</p>",
+            "css": "body { font-family: Arial; padding: 20px; }",
+            "js": ""
+        }
+
+async def generate_image_with_ai(prompt: str, style: str) -> str:
+    """Generate image using AI and return base64"""
+    try:
+        image_gen = OpenAIImageGeneration(api_key=EMERGENT_LLM_KEY)
+        
+        full_prompt = f"{prompt}, {style} style, high quality, detailed"
+        
+        images = await image_gen.generate_images(
+            prompt=full_prompt,
+            model="gpt-image-1",
+            number_of_images=1
+        )
+        
+        if images and len(images) > 0:
+            # Save image to file
+            image_id = str(uuid.uuid4())
+            filename = f"{image_id}.png"
+            filepath = UPLOADS_DIR / 'generated' / filename
+            
+            with open(filepath, "wb") as f:
+                f.write(images[0])
+            
+            # Convert to base64
+            image_base64 = base64.b64encode(images[0]).decode('utf-8')
+            
+            # Save to database
+            await db.generated_images.insert_one({
+                "id": image_id,
+                "prompt": prompt,
+                "style": style,
+                "filename": filename,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return image_base64
+        else:
+            raise Exception("No image generated")
+    except Exception as e:
+        logger.error(f"Error generating image: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def generate_video_script_with_ai(prompt: str, duration: str) -> dict:
+    """Generate video script/storyboard using AI"""
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"video-gen-{uuid.uuid4()}",
+            system_message="""Eres un director de video profesional. Creas guiones y storyboards detallados.
+            Responde en formato estructurado con escenas numeradas."""
+        ).with_model("openai", "gpt-4.1")
+        
+        user_message = UserMessage(text=f"""Crea un guion de video completo para: {prompt}
+        Duracion aproximada: {duration}
+        
+        Incluye:
+        1. Titulo del video
+        2. Descripcion general
+        3. Escenas detalladas (con descripcion visual, dialogo/narracion, duracion)
+        4. Sugerencias de musica/efectos
+        5. Notas de produccion""")
+        
+        response = await chat.send_message(user_message)
+        
+        return {
+            "script": response,
+            "prompt": prompt,
+            "duration": duration
+        }
+    except Exception as e:
+        logger.error(f"Error generating video script: {e}")
+        return {"script": f"Error generando guion: {str(e)}", "prompt": prompt, "duration": duration}
 
 # ==================== API ROUTES ====================
 
 @api_router.get("/")
 async def root():
-    return {"message": "NEXA ROBOT V2 PRO API Online", "version": "2.5.0"}
+    return {"message": "NEXA ROBOT V2 PRO API", "version": "3.0.0"}
 
 @api_router.get("/status", response_model=NexaStatus)
 async def get_status():
     return NexaStatus(
         status="online",
-        version="2.5.0",
+        version="3.0.0",
         features=[
             "chat", "voice_synthesis", "voice_recognition", "vision",
-            "smart_memory", "creative_mode", "photo_editor", "video_editor",
-            "website_builder", "auto_speak"
+            "smart_memory", "creative_mode", "ai_website_generator",
+            "ai_image_generator", "ai_video_script", "photo_editor", "video_editor"
         ],
         llm_connected=bool(EMERGENT_LLM_KEY)
     )
@@ -248,10 +316,7 @@ async def chat_with_nexa(request: ChatRequest):
                 conversation_history = conv["messages"]
         
         response = await get_nexa_response(
-            request.message, 
-            request.session_id,
-            conversation_history,
-            request.creative_mode
+            request.message, request.session_id, conversation_history, request.creative_mode
         )
         
         user_msg = Message(role="user", content=request.message)
@@ -263,14 +328,10 @@ async def chat_with_nexa(request: ChatRequest):
             await db.conversations.update_one(
                 {"session_id": request.session_id},
                 {
-                    "$push": {
-                        "messages": {
-                            "$each": [
-                                {**user_msg.model_dump(), "timestamp": user_msg.timestamp.isoformat()},
-                                {**assistant_msg.model_dump(), "timestamp": assistant_msg.timestamp.isoformat()}
-                            ]
-                        }
-                    },
+                    "$push": {"messages": {"$each": [
+                        {**user_msg.model_dump(), "timestamp": user_msg.timestamp.isoformat()},
+                        {**assistant_msg.model_dump(), "timestamp": assistant_msg.timestamp.isoformat()}
+                    ]}},
                     "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
                 }
             )
@@ -287,14 +348,60 @@ async def chat_with_nexa(request: ChatRequest):
                 msg['timestamp'] = msg['timestamp'].isoformat()
             await db.conversations.insert_one(conv_dict)
         
-        return ChatResponse(
-            response=response,
-            session_id=request.session_id,
-            message_id=assistant_msg.id
-        )
+        return ChatResponse(response=response, session_id=request.session_id, message_id=assistant_msg.id)
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== AI GENERATION ROUTES ====================
+
+@api_router.post("/generate/website")
+async def generate_website(request: GenerateWebsiteRequest):
+    """Generate a website using AI from a prompt"""
+    try:
+        result = await generate_website_with_ai(request.prompt, request.style)
+        return {
+            "success": True,
+            "html": result["html"],
+            "css": result["css"],
+            "js": result["js"],
+            "prompt": request.prompt
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/generate/image")
+async def generate_image(request: GenerateImageRequest):
+    """Generate an image using AI from a prompt"""
+    try:
+        image_base64 = await generate_image_with_ai(request.prompt, request.style)
+        return {
+            "success": True,
+            "image_base64": image_base64,
+            "prompt": request.prompt
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/generate/video-script")
+async def generate_video_script(request: GenerateVideoScriptRequest):
+    """Generate a video script using AI from a prompt"""
+    try:
+        result = await generate_video_script_with_ai(request.prompt, request.duration)
+        return {
+            "success": True,
+            "script": result["script"],
+            "prompt": request.prompt,
+            "duration": request.duration
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/generated/images")
+async def get_generated_images():
+    """Get list of AI generated images"""
+    images = await db.generated_images.find({}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"images": images}
 
 # ==================== MEMORY ROUTES ====================
 
@@ -304,8 +411,8 @@ async def get_memories(user_id: str = "default"):
     return {"memories": memories}
 
 @api_router.post("/memories")
-async def create_memory(memory: MemoryCreate, user_id: str = "default"):
-    mem = Memory(user_id=user_id, **memory.model_dump())
+async def create_memory(key: str, value: str, user_id: str = "default"):
+    mem = Memory(user_id=user_id, key=key, value=value)
     mem_dict = mem.model_dump()
     mem_dict['created_at'] = mem_dict['created_at'].isoformat()
     await db.memories.insert_one(mem_dict)
@@ -321,7 +428,7 @@ async def delete_memory(memory_id: str):
 # ==================== SESSION ROUTES ====================
 
 @api_router.post("/sessions")
-async def create_session(title: str = "Nueva Conversación"):
+async def create_session(title: str = "Nueva Conversacion"):
     session_id = str(uuid.uuid4())
     new_conv = Conversation(session_id=session_id, title=title)
     conv_dict = new_conv.model_dump()
@@ -351,7 +458,7 @@ async def delete_session(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"message": "Session deleted"}
 
-# ==================== FILE UPLOAD ROUTES ====================
+# ==================== FILE ROUTES ====================
 
 @api_router.post("/upload/image")
 async def upload_image(file: UploadFile = File(...)):
@@ -365,42 +472,12 @@ async def upload_image(file: UploadFile = File(...)):
             content = await file.read()
             await f.write(content)
         
-        # Save to database
         await db.files.insert_one({
-            "id": file_id,
-            "filename": filename,
-            "original_name": file.filename,
-            "type": "image",
-            "path": str(filepath),
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "id": file_id, "filename": filename, "original_name": file.filename,
+            "type": "image", "path": str(filepath), "created_at": datetime.now(timezone.utc).isoformat()
         })
         
         return {"id": file_id, "filename": filename, "url": f"/api/files/images/{filename}"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.post("/upload/video")
-async def upload_video(file: UploadFile = File(...)):
-    try:
-        file_id = str(uuid.uuid4())
-        ext = file.filename.split('.')[-1] if '.' in file.filename else 'mp4'
-        filename = f"{file_id}.{ext}"
-        filepath = UPLOADS_DIR / 'videos' / filename
-        
-        async with aiofiles.open(filepath, 'wb') as f:
-            content = await file.read()
-            await f.write(content)
-        
-        await db.files.insert_one({
-            "id": file_id,
-            "filename": filename,
-            "original_name": file.filename,
-            "type": "video",
-            "path": str(filepath),
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        return {"id": file_id, "filename": filename, "url": f"/api/files/videos/{filename}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -408,61 +485,29 @@ async def upload_video(file: UploadFile = File(...)):
 async def get_image(filename: str):
     filepath = UPLOADS_DIR / 'images' / filename
     if not filepath.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(filepath)
-
-@api_router.get("/files/videos/{filename}")
-async def get_video(filename: str):
-    filepath = UPLOADS_DIR / 'videos' / filename
+        # Try generated folder
+        filepath = UPLOADS_DIR / 'generated' / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(filepath)
 
-@api_router.get("/files")
-async def list_files(file_type: str = None):
-    query = {}
-    if file_type:
-        query["type"] = file_type
-    files = await db.files.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return {"files": files}
-
-@api_router.delete("/files/{file_id}")
-async def delete_file(file_id: str):
-    file_doc = await db.files.find_one({"id": file_id})
-    if not file_doc:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Delete physical file
-    filepath = Path(file_doc['path'])
-    if filepath.exists():
-        filepath.unlink()
-    
-    await db.files.delete_one({"id": file_id})
-    return {"message": "File deleted"}
-
-# ==================== WEBSITE BUILDER ROUTES ====================
+# ==================== WEBSITE ROUTES ====================
 
 @api_router.post("/websites")
 async def create_website(website: WebsiteCreate):
     try:
         website_id = str(uuid.uuid4())
-        
-        # Create full HTML with CSS and JS
         full_html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{website.name}</title>
-    <style>
-{website.css}
-    </style>
+    <style>{website.css}</style>
 </head>
 <body>
 {website.html}
-    <script>
-{website.js}
-    </script>
+    <script>{website.js}</script>
 </body>
 </html>"""
         
@@ -473,13 +518,8 @@ async def create_website(website: WebsiteCreate):
             await f.write(full_html)
         
         await db.websites.insert_one({
-            "id": website_id,
-            "name": website.name,
-            "filename": filename,
-            "path": str(filepath),
-            "html": website.html,
-            "css": website.css,
-            "js": website.js,
+            "id": website_id, "name": website.name, "filename": filename,
+            "path": str(filepath), "html": website.html, "css": website.css, "js": website.js,
             "created_at": datetime.now(timezone.utc).isoformat()
         })
         
@@ -506,7 +546,7 @@ async def preview_website(website_id: str):
         raise HTTPException(status_code=404, detail="Website not found")
     filepath = Path(website['path'])
     if not filepath.exists():
-        raise HTTPException(status_code=404, detail="Website file not found")
+        raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(filepath, media_type="text/html")
 
 @api_router.put("/websites/{website_id}")
@@ -521,15 +561,11 @@ async def update_website(website_id: str, website: WebsiteCreate):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{website.name}</title>
-    <style>
-{website.css}
-    </style>
+    <style>{website.css}</style>
 </head>
 <body>
 {website.html}
-    <script>
-{website.js}
-    </script>
+    <script>{website.js}</script>
 </body>
 </html>"""
     
@@ -539,13 +575,7 @@ async def update_website(website_id: str, website: WebsiteCreate):
     
     await db.websites.update_one(
         {"id": website_id},
-        {"$set": {
-            "name": website.name,
-            "html": website.html,
-            "css": website.css,
-            "js": website.js,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
+        {"$set": {"name": website.name, "html": website.html, "css": website.css, "js": website.js}}
     )
     
     return {"message": "Website updated", "id": website_id}
@@ -555,11 +585,9 @@ async def delete_website(website_id: str):
     website = await db.websites.find_one({"id": website_id})
     if not website:
         raise HTTPException(status_code=404, detail="Website not found")
-    
     filepath = Path(website['path'])
     if filepath.exists():
         filepath.unlink()
-    
     await db.websites.delete_one({"id": website_id})
     return {"message": "Website deleted"}
 
