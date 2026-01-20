@@ -293,31 +293,51 @@ function App() {
     
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;  // Natural pitch
+    utterance.rate = 0.95;
     
     // Try to find a Spanish FEMALE voice
     const voices = synthRef.current.getVoices();
-    // Priority: Spanish female voices
-    const femaleVoice = voices.find(v => 
-      v.lang.includes('es') && 
-      (v.name.toLowerCase().includes('female') || 
-       v.name.toLowerCase().includes('mujer') ||
-       v.name.toLowerCase().includes('mónica') ||
-       v.name.toLowerCase().includes('monica') ||
-       v.name.toLowerCase().includes('paulina') ||
-       v.name.toLowerCase().includes('helena') ||
-       v.name.toLowerCase().includes('elvira') ||
-       v.name.toLowerCase().includes('conchita') ||
-       v.name.toLowerCase().includes('lucia') ||
-       v.name.toLowerCase().includes('penelope') ||
-       v.name.toLowerCase().includes('lupe'))
-    );
+    console.log('All voices:', voices.map(v => v.name + ' - ' + v.lang));
     
-    // Fallback to any Spanish voice if no female found
-    const spanishVoice = femaleVoice || voices.find(v => v.lang.includes('es'));
-    if (spanishVoice) {
-      utterance.voice = spanishVoice;
+    // Female voice names in Spanish (common across browsers)
+    const femaleNames = [
+      'mónica', 'monica', 'paulina', 'helena', 'elvira', 'conchita', 
+      'lucia', 'lucía', 'penelope', 'penélope', 'lupe', 'rosa', 
+      'female', 'mujer', 'woman', 'google español', 'microsoft helena',
+      'microsoft sabina', 'microsoft laura', 'cortana', 'siri female'
+    ];
+    
+    // Find Spanish female voice
+    let selectedVoice = voices.find(v => {
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+      return lang.includes('es') && femaleNames.some(fn => name.includes(fn));
+    });
+    
+    // If no specific female voice, try any voice with "es" that's not obviously male
+    if (!selectedVoice) {
+      const maleNames = ['jorge', 'diego', 'carlos', 'pablo', 'male', 'hombre', 'man'];
+      selectedVoice = voices.find(v => {
+        const name = v.name.toLowerCase();
+        const lang = v.lang.toLowerCase();
+        return lang.includes('es') && !maleNames.some(mn => name.includes(mn));
+      });
+    }
+    
+    // Last fallback: any Spanish voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => v.lang.includes('es'));
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log('Selected voice:', selectedVoice.name);
+      // If it's not a confirmed female voice, raise pitch
+      const isFemale = femaleNames.some(fn => selectedVoice.name.toLowerCase().includes(fn));
+      utterance.pitch = isFemale ? 1.0 : 1.4;  // Higher pitch for feminine sound
+    } else {
+      // No Spanish voice found, use high pitch for feminine sound
+      utterance.pitch = 1.4;
     }
     
     utterance.onstart = () => setIsSpeaking(true);
