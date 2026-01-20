@@ -265,14 +265,40 @@ function App() {
     // Cancel any ongoing speech
     synthRef.current.cancel();
     
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Clean text: remove asterisks and markdown formatting
+    const cleanText = text
+      .replace(/\*\*/g, '')  // Remove double asterisks
+      .replace(/\*/g, '')    // Remove single asterisks
+      .replace(/_/g, '')     // Remove underscores
+      .replace(/`/g, '')     // Remove backticks
+      .replace(/#{1,6}\s/g, '') // Remove markdown headers
+      .trim();
+    
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
     utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    utterance.pitch = 1.1;  // Slightly higher pitch for feminine voice
     
-    // Try to find a Spanish voice
+    // Try to find a Spanish FEMALE voice
     const voices = synthRef.current.getVoices();
-    const spanishVoice = voices.find(v => v.lang.includes('es'));
+    // Priority: Spanish female voices
+    const femaleVoice = voices.find(v => 
+      v.lang.includes('es') && 
+      (v.name.toLowerCase().includes('female') || 
+       v.name.toLowerCase().includes('mujer') ||
+       v.name.toLowerCase().includes('mónica') ||
+       v.name.toLowerCase().includes('monica') ||
+       v.name.toLowerCase().includes('paulina') ||
+       v.name.toLowerCase().includes('helena') ||
+       v.name.toLowerCase().includes('elvira') ||
+       v.name.toLowerCase().includes('conchita') ||
+       v.name.toLowerCase().includes('lucia') ||
+       v.name.toLowerCase().includes('penelope') ||
+       v.name.toLowerCase().includes('lupe'))
+    );
+    
+    // Fallback to any Spanish voice if no female found
+    const spanishVoice = femaleVoice || voices.find(v => v.lang.includes('es'));
     if (spanishVoice) {
       utterance.voice = spanishVoice;
     }
