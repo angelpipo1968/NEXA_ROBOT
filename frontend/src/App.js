@@ -222,7 +222,13 @@ function App() {
         }
       } else {
         const response = await axios.post(endpoint, payload);
-        setMessages(prev => [...prev, { id: response.data.message_id || `assistant-${Date.now()}`, role: 'assistant', content: response.data.response, timestamp: new Date().toISOString() }]);
+        const assistantResponse = response.data.response;
+        setMessages(prev => [...prev, { id: response.data.message_id || `assistant-${Date.now()}`, role: 'assistant', content: assistantResponse, timestamp: new Date().toISOString() }]);
+        
+        // Auto hablar la respuesta
+        if (autoSpeak && voiceEnabled) {
+          setTimeout(() => speak(assistantResponse), 500);
+        }
       }
       
       await loadSessions();
