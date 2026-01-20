@@ -134,6 +134,16 @@ function App() {
     if ('speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
       setSpeechSupported(true);
+      
+      // Load voices (some browsers need this event)
+      const loadVoices = () => {
+        const voices = synthRef.current.getVoices();
+        console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+      };
+      
+      // Load voices immediately and on change
+      loadVoices();
+      synthRef.current.onvoiceschanged = loadVoices;
     }
     
     // Initialize speech recognition
